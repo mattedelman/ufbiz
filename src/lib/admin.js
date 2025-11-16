@@ -72,8 +72,9 @@ export async function inviteUserByEmail(email, organizationId, organizationName)
     throw new Error('Service role key not configured. Please add VITE_SUPABASE_SERVICE_ROLE_KEY to your .env file.')
   }
 
-  // Get the site URL for redirect - use production URL, fallback to current origin for dev
-  const siteUrl = import.meta.env.VITE_SITE_URL || (import.meta.env.PROD ? 'https://ufbiz.com' : window.location.origin)
+  // Always use production URL for invites (so they work regardless of where invite is sent from)
+  // Can be overridden with VITE_SITE_URL environment variable
+  const siteUrl = import.meta.env.VITE_SITE_URL || 'https://ufbiz.com'
   const redirectTo = `${siteUrl}/signup?invite=true&org=${encodeURIComponent(organizationName || '')}`
 
   // Invite user with custom redirect

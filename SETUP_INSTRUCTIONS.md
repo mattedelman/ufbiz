@@ -21,6 +21,14 @@
      - ⚠️ **IMPORTANT**: The service_role key has admin privileges. Keep it secret!
      - You need this for the invite user functionality
 
+3. **Configure Redirect URLs** (IMPORTANT for invites):
+   - Go to **Authentication** → **URL Configuration**
+   - Under "Redirect URLs", add:
+     - `https://ufbiz.com/signup`
+     - `https://ufbiz.com/*` (wildcard for all pages)
+   - Click "Save"
+   - This allows Supabase to redirect invite links to your production site
+
 ## Step 3: Set Up Environment Variables
 
 1. Create a `.env` file in the root of your project (same level as `package.json`)
@@ -33,7 +41,7 @@ VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 VITE_SITE_URL=https://ufbiz.com
 ```
 
-**Note:** `VITE_SITE_URL` is optional but recommended. If not set, it will use `https://ufbiz.com` in production builds, or `localhost` in development.
+**Note:** `VITE_SITE_URL` is optional. If not set, it defaults to `https://ufbiz.com` for all invite links (so invites work even if sent from localhost).
 
 **Example:**
 ```env
