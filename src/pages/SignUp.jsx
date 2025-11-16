@@ -29,6 +29,7 @@ function SignUp() {
     const accessToken = hashParams.get('access_token')
     const type = hashParams.get('type')
     const orgName = searchParams.get('org')
+    const orgId = searchParams.get('orgId') // Get organization ID from URL
     
     // Check for errors first (expired links, etc.) - but only if there's NO access token
     const errorCode = hashParams.get('error_code')
@@ -49,17 +50,17 @@ function SignUp() {
 
     if (accessToken) {
       // Process the token immediately
-      verifyInviteToken(accessToken, type, orgName)
+      verifyInviteToken(accessToken, type, orgName, orgId)
     } else {
       // If no token in URL, wait a moment for Supabase to process, then check session
       // This handles cases where Supabase is still processing the redirect
       setTimeout(() => {
-        checkExistingSession(orgName)
+        checkExistingSession(orgName, orgId)
       }, 500)
     }
   }, [searchParams])
 
-  const verifyInviteToken = async (token, type, orgName) => {
+  const verifyInviteToken = async (token, type, orgName, orgId) => {
     try {
       // Extract refresh token from hash if available
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
@@ -76,10 +77,14 @@ function SignUp() {
         // Try to get the current user instead
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
+          // Extract organization_id from user metadata (stored when invite was sent)
+          const userOrgId = user.app_metadata?.organization_id || user.user_metadata?.organization_id || orgId
+          
           setInviteData({
             email: user.email,
             userId: user.id,
-            organizationName: orgName || 'your organization'
+            organizationName: orgName || user.app_metadata?.organization_name || user.user_metadata?.organization_name || 'your organization',
+            organizationId: userOrgId // Store organization ID for linking
           })
           // Clear the hash from URL
           window.history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -90,10 +95,14 @@ function SignUp() {
       }
 
       if (data.user) {
+        // Extract organization_id from user metadata (stored when invite was sent)
+        const userOrgId = data.user.app_metadata?.organization_id || data.user.user_metadata?.organization_id || orgId
+        
         setInviteData({
           email: data.user.email,
           userId: data.user.id,
-          organizationName: orgName || 'your organization'
+          organizationName: orgName || data.user.app_metadata?.organization_name || data.user.user_metadata?.organization_name || 'your organization',
+          organizationId: userOrgId // Store organization ID for linking
         })
         // Clear the hash from URL
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -114,7 +123,7 @@ function SignUp() {
     }
   }
 
-  const checkExistingSession = async (orgName) => {
+  const checkExistingSession = async (orgName, orgId) => {
     try {
       // First check if there's a token in the hash that we might have missed
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
@@ -123,7 +132,8 @@ function SignUp() {
       
       // If we find a token now, process it
       if (accessToken) {
-        verifyInviteToken(accessToken, hashParams.get('type'), orgName)
+        const urlOrgId = new URLSearchParams(window.location.search).get('orgId')
+        verifyInviteToken(accessToken, hashParams.get('type'), orgName, urlOrgId)
         return
       }
       
@@ -138,10 +148,14 @@ function SignUp() {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       
       if (user) {
+        // Extract organization_id from user metadata (stored when invite was sent)
+        const userOrgId = user.app_metadata?.organization_id || user.user_metadata?.organization_id || orgId
+        
         setInviteData({
           email: user.email,
           userId: user.id,
-          organizationName: orgName || 'your organization'
+          organizationName: orgName || user.app_metadata?.organization_name || user.user_metadata?.organization_name || 'your organization',
+          organizationId: userOrgId // Store organization ID for linking
         })
         // Clear the hash from URL
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -197,10 +211,19 @@ function SignUp() {
 
       if (updateError) throw updateError
 
-      // If we have organization info, try to link the user
-      if (inviteData?.userId) {
+      // Automatically link user to organization if we have the organization ID
+      if (inviteData?.userId && inviteData?.organizationId) {
         try {
-          // Get organization ID from name (you might want to improve this)
+          await linkUserToOrganization(inviteData.userId, inviteData.organizationId, inviteData.email)
+          console.log('User successfully linked to organization')
+        } catch (linkError) {
+          console.error('Error linking user to organization:', linkError)
+          // Don't fail the sign-up if linking fails - user can be linked manually
+          setError('Account created, but there was an issue linking you to your organization. Please contact your administrator.')
+        }
+      } else if (inviteData?.userId) {
+        // If we don't have organization ID, try to find it by name (fallback)
+        try {
           const { data: orgs } = await supabase
             .from('organizations')
             .select('id')
@@ -210,9 +233,12 @@ function SignUp() {
 
           if (orgs) {
             await linkUserToOrganization(inviteData.userId, orgs.id, inviteData.email)
+          } else {
+            console.warn('Could not find organization to link user to')
           }
         } catch (linkError) {
-          console.log('Note: User will need to be linked manually via dashboard')
+          console.error('Error linking user to organization:', linkError)
+          setError('Account created, but there was an issue linking you to your organization. Please contact your administrator.')
         }
       }
 

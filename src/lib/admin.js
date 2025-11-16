@@ -75,7 +75,7 @@ export async function inviteUserByEmail(email, organizationId, organizationName)
   // Always use production URL for invites (so they work regardless of where invite is sent from)
   // Can be overridden with VITE_SITE_URL environment variable
   const siteUrl = import.meta.env.VITE_SITE_URL || 'https://ufbiz.com'
-  const redirectTo = `${siteUrl}/signup?invite=true&org=${encodeURIComponent(organizationName || '')}`
+  const redirectTo = `${siteUrl}/signup?invite=true&org=${encodeURIComponent(organizationName || '')}&orgId=${organizationId}`
 
   // Invite user with custom redirect
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
