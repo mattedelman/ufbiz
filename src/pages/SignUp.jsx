@@ -79,8 +79,19 @@ function SignUp() {
         // Try to get the current user instead
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          // Extract organization_id from user metadata (stored when invite was sent)
-          const userOrgId = user.app_metadata?.organization_id || user.user_metadata?.organization_id || orgId
+          // PRIORITIZE URL parameter over metadata (URL is more reliable)
+          const userOrgId = orgId || user.app_metadata?.organization_id || user.user_metadata?.organization_id
+          
+          console.log('Extracted organization data (fallback):', {
+            fromURL: orgId,
+            fromAppMetadata: user.app_metadata?.organization_id,
+            fromUserMetadata: user.user_metadata?.organization_id,
+            finalOrgId: userOrgId
+          })
+          
+          if (!userOrgId) {
+            console.error('WARNING: No organization ID found in fallback!', { orgId, metadata: user.app_metadata })
+          }
           
           setInviteData({
             email: user.email,
@@ -88,8 +99,7 @@ function SignUp() {
             organizationName: orgName || user.app_metadata?.organization_name || user.user_metadata?.organization_name || 'your organization',
             organizationId: userOrgId // Store organization ID for linking
           })
-          // Clear the hash from URL
-          window.history.replaceState(null, '', window.location.pathname + window.location.search)
+          // DON'T clear the URL yet - we need orgId for linking
           setVerifying(false)
           return
         }
@@ -97,17 +107,22 @@ function SignUp() {
       }
 
       if (data.user) {
-        // Extract organization_id from user metadata (stored when invite was sent)
-        const userOrgId = data.user.app_metadata?.organization_id || data.user.user_metadata?.organization_id || orgId
+        // PRIORITIZE URL parameter over metadata (URL is more reliable)
+        // The orgId from URL is guaranteed to be there if invite was sent correctly
+        const userOrgId = orgId || data.user.app_metadata?.organization_id || data.user.user_metadata?.organization_id
         
         console.log('Extracted organization data:', {
+          fromURL: orgId,
           fromAppMetadata: data.user.app_metadata?.organization_id,
           fromUserMetadata: data.user.user_metadata?.organization_id,
-          fromURL: orgId,
           finalOrgId: userOrgId,
           userMetadata: data.user.app_metadata,
           userUserMetadata: data.user.user_metadata
         })
+        
+        if (!userOrgId) {
+          console.error('WARNING: No organization ID found!', { orgId, metadata: data.user.app_metadata, userMetadata: data.user.user_metadata })
+        }
         
         setInviteData({
           email: data.user.email,
@@ -115,8 +130,7 @@ function SignUp() {
           organizationName: orgName || data.user.app_metadata?.organization_name || data.user.user_metadata?.organization_name || 'your organization',
           organizationId: userOrgId // Store organization ID for linking
         })
-        // Clear the hash from URL
-        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        // DON'T clear the URL yet - we need orgId for linking
       }
     } catch (err) {
       console.error('Token verification error:', err)
@@ -159,8 +173,19 @@ function SignUp() {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       
       if (user) {
-        // Extract organization_id from user metadata (stored when invite was sent)
-        const userOrgId = user.app_metadata?.organization_id || user.user_metadata?.organization_id || orgId
+        // PRIORITIZE URL parameter over metadata (URL is more reliable)
+        const userOrgId = orgId || user.app_metadata?.organization_id || user.user_metadata?.organization_id
+        
+        console.log('Extracted organization data (checkExistingSession):', {
+          fromURL: orgId,
+          fromAppMetadata: user.app_metadata?.organization_id,
+          fromUserMetadata: user.user_metadata?.organization_id,
+          finalOrgId: userOrgId
+        })
+        
+        if (!userOrgId) {
+          console.error('WARNING: No organization ID found in checkExistingSession!', { orgId, metadata: user.app_metadata })
+        }
         
         setInviteData({
           email: user.email,
@@ -168,8 +193,7 @@ function SignUp() {
           organizationName: orgName || user.app_metadata?.organization_name || user.user_metadata?.organization_name || 'your organization',
           organizationId: userOrgId // Store organization ID for linking
         })
-        // Clear the hash from URL
-        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        // DON'T clear the URL yet - we need orgId for linking
       } else if (!errorCode) {
         // Only show error if there's no error code (might still be processing)
         // Wait a bit more before showing error
@@ -224,11 +248,18 @@ function SignUp() {
 
       // Automatically link user to organization if we have the organization ID
       if (inviteData?.userId) {
-        // Ensure we have a valid organization ID
-        const orgIdToLink = inviteData.organizationId
+        // Get organization ID from inviteData, or try to get it from URL as last resort
+        let orgIdToLink = inviteData.organizationId
+        
+        // If we don't have it in inviteData, try to get it from URL (should still be there)
+        if (!orgIdToLink || orgIdToLink === 'null' || orgIdToLink === 'undefined') {
+          const urlOrgId = new URLSearchParams(window.location.search).get('orgId')
+          orgIdToLink = urlOrgId || orgIdToLink
+          console.log('Falling back to URL orgId:', urlOrgId)
+        }
         
         if (!orgIdToLink || orgIdToLink === 'null' || orgIdToLink === 'undefined') {
-          console.error('Invalid organization ID:', orgIdToLink)
+          console.error('Invalid organization ID:', orgIdToLink, 'inviteData:', inviteData)
           setError('Account created, but organization information is missing. Please contact your administrator to link you to an organization.')
         } else {
           try {
@@ -260,9 +291,18 @@ function SignUp() {
                   .single()
                 
                 if (profile?.organization_id === orgIdToLink) {
-                  console.log('Verified: User is linked to organization')
+                  console.log('Verified: User is linked to organization', profile)
+                  // Clear the URL now that we're done
+                  window.history.replaceState(null, '', window.location.pathname)
                 } else {
-                  console.warn('Warning: Link verification failed', { profile, expectedOrgId: orgIdToLink })
+                  console.error('ERROR: Link verification failed!', { 
+                    profile, 
+                    expectedOrgId: orgIdToLink,
+                    actualOrgId: profile?.organization_id 
+                  })
+                  // Try one more time to link
+                  console.log('Retrying link one more time...')
+                  await linkUserToOrganization(inviteData.userId, orgIdToLink, inviteData.email)
                 }
               } catch (linkError) {
                 console.error(`Link attempt ${attempts + 1} failed:`, linkError)
