@@ -1806,7 +1806,8 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
 
   return (
     <div className="space-y-6">
-      {/* Invite User Section */}
+      {/* Link Users section commented out - using Supabase dashboard for invites only */}
+      {/* 
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Invite New User</h2>
@@ -2012,6 +2013,17 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
             </table>
           </div>
         )}
+      </div>
+      */}
+      
+      <div className="card p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">User Management</h2>
+        <p className="text-gray-600 mb-4">
+          To invite users, please use the Supabase dashboard. Go to Authentication → Users → Invite User.
+        </p>
+        <p className="text-sm text-gray-500">
+          After inviting users through Supabase, you can link them to organizations manually in the database if needed.
+        </p>
       </div>
     </div>
   )
