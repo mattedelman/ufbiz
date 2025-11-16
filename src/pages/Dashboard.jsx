@@ -1865,7 +1865,7 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
             </div>
             <div>
               <label htmlFor="inviteOrg" className="block text-sm font-medium text-gray-700 mb-2">
-                Organization
+                Organization <span className="text-red-500">*</span>
               </label>
               <select
                 id="inviteOrg"
@@ -1875,12 +1875,19 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
                 required
               >
                 <option value="">Select organization...</option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
+                {organizations.length === 0 ? (
+                  <option value="" disabled>Loading organizations...</option>
+                ) : (
+                  organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name}
+                    </option>
+                  ))
+                )}
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                The user will be automatically linked to this organization when they create their account.
+              </p>
             </div>
             <button
               type="submit"

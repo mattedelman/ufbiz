@@ -41,17 +41,24 @@ export async function getUnlinkedUsers() {
 
 // Link user to organization
 export async function linkUserToOrganization(userId, organizationId, email) {
+  // Use upsert to create or update the profile
+  // This will create the profile if it doesn't exist, or update it if it does
   const { data, error } = await supabase
     .from('user_profiles')
     .upsert({
       id: userId,
       email: email,
       organization_id: organizationId
+    }, {
+      onConflict: 'id' // Update if profile already exists
     })
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('Link user error:', error)
+    throw error
+  }
   return data
 }
 

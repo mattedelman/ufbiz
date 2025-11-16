@@ -214,8 +214,29 @@ function SignUp() {
       // Automatically link user to organization if we have the organization ID
       if (inviteData?.userId && inviteData?.organizationId) {
         try {
-          await linkUserToOrganization(inviteData.userId, inviteData.organizationId, inviteData.email)
-          console.log('User successfully linked to organization')
+          // Wait a moment for the profile to be created by the trigger (if it hasn't been created yet)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          // Try to link the user, with retry logic in case profile doesn't exist yet
+          let linked = false
+          let attempts = 0
+          const maxAttempts = 3
+          
+          while (!linked && attempts < maxAttempts) {
+            try {
+              await linkUserToOrganization(inviteData.userId, inviteData.organizationId, inviteData.email)
+              linked = true
+              console.log('User successfully linked to organization')
+            } catch (linkError) {
+              attempts++
+              if (attempts < maxAttempts) {
+                // Wait a bit longer and try again (profile might still be creating)
+                await new Promise(resolve => setTimeout(resolve, 1000))
+              } else {
+                throw linkError
+              }
+            }
+          }
         } catch (linkError) {
           console.error('Error linking user to organization:', linkError)
           // Don't fail the sign-up if linking fails - user can be linked manually
