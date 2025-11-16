@@ -29,6 +29,13 @@
    - Click "Save"
    - This allows Supabase to redirect invite links to your production site
 
+4. **Configure Invite Expiration** (Optional):
+   - Go to **Authentication** → **Settings** → **Auth**
+   - Find "Invite link expiry" or "OTP expiry"
+   - Default is usually 24 hours
+   - You can increase this if needed (e.g., 7 days = 604800 seconds)
+   - Click "Save"
+
 ## Step 3: Set Up Environment Variables
 
 1. Create a `.env` file in the root of your project (same level as `package.json`)

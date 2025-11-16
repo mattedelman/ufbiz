@@ -60,7 +60,15 @@ function SignUp() {
       }
     } catch (err) {
       console.error('Token verification error:', err)
-      setError('Invalid or expired invite link. Please request a new invite.')
+      // Check if it's an expired link error
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const errorCode = hashParams.get('error_code')
+      
+      if (errorCode === 'otp_expired' || err.message?.includes('expired')) {
+        setError('This invite link has expired. Please request a new invite from your administrator.')
+      } else {
+        setError('Invalid or expired invite link. Please request a new invite.')
+      }
     } finally {
       setVerifying(false)
     }
@@ -68,6 +76,17 @@ function SignUp() {
 
   const checkExistingSession = async (orgName) => {
     try {
+      // Check for error in URL hash (from Supabase redirect)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const errorCode = hashParams.get('error_code')
+      const errorDescription = hashParams.get('error_description')
+      
+      if (errorCode === 'otp_expired') {
+        setError('This invite link has expired. Please request a new invite from your administrator.')
+        setVerifying(false)
+        return
+      }
+      
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setInviteData({
