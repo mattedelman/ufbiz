@@ -605,6 +605,8 @@ function Dashboard() {
               Calendar
             </div>
           </button>
+          {/* Link Users tab commented out - using Supabase dashboard for invites only */}
+          {/*
           <button
             onClick={() => {
               setActiveTab('users')
@@ -621,6 +623,7 @@ function Dashboard() {
               Link Users
             </div>
           </button>
+          */}
         </div>
 
         {/* Add Event Button and Bulk Actions - Only show in events tab */}
@@ -1092,7 +1095,7 @@ function Dashboard() {
           </div>
         ) : activeTab === 'calendar' && !showAddForm ? (
           <CalendarView events={events} eventsByMonth={eventsByMonth} onEdit={handleEdit} onDelete={handleDelete} onDuplicate={handleDuplicate} />
-        ) : activeTab === 'users' ? (
+        ) : /* activeTab === 'users' ? (
           <UserLinkingView 
             loggedInOrgId={loggedInOrganization?.id}
             onUserLinked={() => {
@@ -1100,7 +1103,7 @@ function Dashboard() {
               window.location.reload()
             }}
           />
-        ) : null}
+        ) : */ null}
 
         {/* Organization Info Modal */}
         {showOrgModal && (
