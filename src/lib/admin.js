@@ -50,3 +50,4 @@ export async function getAllOrganizations() {
   return data
 }
 
+

@@ -69,3 +69,4 @@ ON CONFLICT (name) DO UPDATE SET
 -- SELECT COUNT(*) FROM organizations;
 -- Should return 52
 
+
