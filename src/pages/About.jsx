@@ -1,4 +1,5 @@
 import { User, Target, Heart, Lightbulb, Users } from 'lucide-react'
+import SEO from '../components/SEO'
 
 function About() {
   const values = [
@@ -35,6 +36,12 @@ function About() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title="About UFbiz"
+        description="Learn about UFbiz, a comprehensive platform connecting University of Florida business students with organizations, programs, and events. Created by students, for students."
+        keywords="UFbiz about, UF business platform, UF student resources, University of Florida business community"
+        canonical="/about"
+      />
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-uf-blue via-blue-700 to-uf-orange text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -3,6 +3,7 @@ import { Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { onAuthStateChange, getCurrentUser } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { Helmet } from 'react-helmet-async'
 
 function Layout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -50,8 +51,51 @@ function Layout({ children }) {
 
   const isActive = (path) => location.pathname === path
 
+  const siteUrl = 'https://ufbiz.com'
+  
+  // Structured Data (JSON-LD) for Organization
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "UFbiz",
+    "description": "A comprehensive resource platform for business-related organizations, programs, and events at the University of Florida",
+    "url": siteUrl,
+    "logo": `${siteUrl}/logo.png`,
+    "sameAs": [],
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Gainesville",
+      "addressRegion": "FL",
+      "addressCountry": "US"
+    },
+    "memberOf": {
+      "@type": "CollegeOrUniversity",
+      "name": "University of Florida"
+    }
+  }
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "UFbiz",
+    "url": siteUrl,
+    "description": "Business Resources at the University of Florida",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${siteUrl}/clubs?search={search_term_string}`
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
+      </Helmet>
       {/* Navigation */}
       <nav className="bg-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

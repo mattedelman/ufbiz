@@ -5,6 +5,7 @@ import { clubs } from '../data/clubs'
 import { getPublishedEvents } from '../lib/events'
 import { isSupabaseConfigured } from '../lib/supabase'
 import Calendar from '../components/Calendar'
+import SEO from '../components/SEO'
 
 function Events() {
   const [events, setEvents] = useState([])
@@ -166,6 +167,12 @@ function Events() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title="Business Events Calendar"
+        description="Stay updated with upcoming business events, workshops, networking sessions, and competitions at the University of Florida. Find events from UF business organizations."
+        keywords="UF business events, UF networking events, UF workshops, UF business calendar, UF career events, UF business competitions"
+        canonical="/events"
+      />
       {/* Compact Header */}
       <div className="bg-gradient-to-r from-uf-orange to-orange-600 text-white py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

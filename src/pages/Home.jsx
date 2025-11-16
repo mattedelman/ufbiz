@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Calendar, Users, TrendingUp, HelpCircle, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { clubs } from '../data/clubs'
+import SEO from '../components/SEO'
 
 function FAQ() {
   const [openIndex, setOpenIndex] = useState(null)
@@ -166,6 +167,12 @@ function Home() {
 
   return (
     <div>
+      <SEO 
+        title="Business Resources at UF"
+        description="Discover 50+ business organizations, programs, and events at the University of Florida. Connect with the UF business community, find networking opportunities, and grow your career."
+        keywords="UF business, University of Florida business organizations, UF business clubs, UF business events, UF networking, UF career resources"
+        canonical="/"
+      />
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-uf-blue via-blue-700 to-uf-orange text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">

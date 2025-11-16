@@ -4,6 +4,7 @@ import { clubs, categories } from '../data/clubs'
 import { getPublishedEvents, getEventsByOrganization } from '../lib/events'
 import { getAllOrganizations } from '../lib/admin'
 import { isSupabaseConfigured } from '../lib/supabase'
+import SEO from '../components/SEO'
 
 function ClubModal({ club, onClose, relatedEvents }) {
   const [imageError, setImageError] = useState(false)
@@ -348,6 +349,12 @@ function Clubs() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title="Business Organizations & Programs"
+        description="Browse 50+ business organizations and programs at the University of Florida. Find clubs, societies, and programs that match your interests and career goals."
+        keywords="UF business organizations, UF business clubs, UF business programs, UF student organizations, UF business societies"
+        canonical="/clubs"
+      />
       {/* Header */}
       <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
