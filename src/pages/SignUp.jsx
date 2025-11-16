@@ -30,12 +30,12 @@ function SignUp() {
     const type = hashParams.get('type')
     const orgName = searchParams.get('org')
     
-    // Check for errors first (expired links, etc.)
+    // Check for errors first (expired links, etc.) - but only if there's NO access token
     const errorCode = hashParams.get('error_code')
     const errorDescription = hashParams.get('error_description')
     
-    if (errorCode) {
-      // Handle error immediately
+    // Only show error immediately if there's an error AND no access token
+    if (errorCode && !accessToken) {
       if (errorCode === 'otp_expired') {
         setError('This invite link has expired. Please request a new invite from your administrator.')
       } else {
@@ -48,23 +48,46 @@ function SignUp() {
     }
 
     if (accessToken) {
-      // Supabase automatically handles the token, just verify we have a user
+      // Process the token immediately
       verifyInviteToken(accessToken, type, orgName)
     } else {
-      // Check if user is already in session (might have been set by Supabase redirect)
-      checkExistingSession(orgName)
+      // If no token in URL, wait a moment for Supabase to process, then check session
+      // This handles cases where Supabase is still processing the redirect
+      setTimeout(() => {
+        checkExistingSession(orgName)
+      }, 500)
     }
   }, [searchParams])
 
   const verifyInviteToken = async (token, type, orgName) => {
     try {
+      // Extract refresh token from hash if available
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const refreshToken = hashParams.get('refresh_token') || ''
+      
       // Set session with the token from URL hash
       const { data, error } = await supabase.auth.setSession({
         access_token: token,
-        refresh_token: ''
+        refresh_token: refreshToken
       })
 
-      if (error) throw error
+      if (error) {
+        // If session setting fails, check if it's because user already has a session
+        // Try to get the current user instead
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setInviteData({
+            email: user.email,
+            userId: user.id,
+            organizationName: orgName || 'your organization'
+          })
+          // Clear the hash from URL
+          window.history.replaceState(null, '', window.location.pathname + window.location.search)
+          setVerifying(false)
+          return
+        }
+        throw error
+      }
 
       if (data.user) {
         setInviteData({
@@ -93,29 +116,53 @@ function SignUp() {
 
   const checkExistingSession = async (orgName) => {
     try {
-      // Check for error in URL hash (from Supabase redirect)
+      // First check if there's a token in the hash that we might have missed
       const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
       const errorCode = hashParams.get('error_code')
-      const errorDescription = hashParams.get('error_description')
       
+      // If we find a token now, process it
+      if (accessToken) {
+        verifyInviteToken(accessToken, hashParams.get('type'), orgName)
+        return
+      }
+      
+      // Only show error if there's an error code and no token
       if (errorCode === 'otp_expired') {
         setError('This invite link has expired. Please request a new invite from your administrator.')
         setVerifying(false)
         return
       }
       
-      const { data: { user } } = await supabase.auth.getUser()
+      // Check if user is already in session (Supabase might have set it)
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
       if (user) {
         setInviteData({
           email: user.email,
           userId: user.id,
           organizationName: orgName || 'your organization'
         })
-      } else {
-        setError('Invalid or missing invite link. Please request a new invite.')
+        // Clear the hash from URL
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      } else if (!errorCode) {
+        // Only show error if there's no error code (might still be processing)
+        // Wait a bit more before showing error
+        setTimeout(() => {
+          const finalHashParams = new URLSearchParams(window.location.hash.substring(1))
+          const finalToken = finalHashParams.get('access_token')
+          const finalError = finalHashParams.get('error_code')
+          
+          if (!finalToken && !finalError) {
+            setError('Invalid or missing invite link. Please request a new invite.')
+            setVerifying(false)
+          }
+        }, 1000)
+        return
       }
     } catch (err) {
-      setError('Invalid or missing invite link. Please request a new invite.')
+      // Don't show error immediately - might still be processing
+      console.log('Session check:', err)
     } finally {
       setVerifying(false)
     }
