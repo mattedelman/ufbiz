@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Calendar, Users, TrendingUp, HelpCircle, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { clubs } from '../data/clubs'
@@ -94,6 +94,24 @@ function RotatingMajor() {
 }
 
 function Home() {
+  const navigate = useNavigate()
+
+  // Check for invite token in URL hash and redirect to signup
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const accessToken = hashParams.get('access_token')
+    const type = hashParams.get('type')
+    const errorCode = hashParams.get('error_code')
+    
+    // If there's an invite token or error, redirect to signup page
+    if (accessToken || errorCode || type === 'invite') {
+      const currentSearch = window.location.search
+      const hash = window.location.hash
+      // Preserve query params and hash, redirect to signup
+      navigate(`/signup${currentSearch}${hash}`, { replace: true })
+    }
+  }, [navigate])
+
   const features = [
     {
       icon: Users,
