@@ -29,6 +29,23 @@ function SignUp() {
     const accessToken = hashParams.get('access_token')
     const type = hashParams.get('type')
     const orgName = searchParams.get('org')
+    
+    // Check for errors first (expired links, etc.)
+    const errorCode = hashParams.get('error_code')
+    const errorDescription = hashParams.get('error_description')
+    
+    if (errorCode) {
+      // Handle error immediately
+      if (errorCode === 'otp_expired') {
+        setError('This invite link has expired. Please request a new invite from your administrator.')
+      } else {
+        setError(errorDescription || 'Invalid invite link. Please request a new invite.')
+      }
+      setVerifying(false)
+      // Clear the hash from URL
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      return
+    }
 
     if (accessToken) {
       // Supabase automatically handles the token, just verify we have a user
@@ -206,41 +223,86 @@ function SignUp() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-4">
-              <Mail className="h-8 w-8" />
+  // If there's an error (like expired link), show a nice error page
+  if (error && !inviteData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full">
+          <div className="card p-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-6">
+              <AlertCircle className="h-8 w-8 text-red-600" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Create Your Account</h1>
-            <p className="text-lg text-blue-100">
-              {inviteData 
-                ? `You've been invited to join ${inviteData.organizationName} on UFbiz`
-                : 'Complete your account setup'}
+            <h1 className="text-3xl font-bold text-gray-900 mb-4" style={{ color: '#FA4616' }}>
+              Invite Link Expired
+            </h1>
+            <p className="text-lg text-gray-700 mb-6">
+              {error}
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                <strong>Need a new invite?</strong>
+              </p>
+              <p className="text-sm text-blue-700 mt-2">
+                Contact your administrator at{' '}
+                <a href="mailto:edelmanm@ufl.edu" className="font-semibold underline">
+                  edelmanm@ufl.edu
+                </a>
+              </p>
+            </div>
+            <a 
+              href="/" 
+              className="inline-block px-6 py-3 bg-uf-blue text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Go to Home
+            </a>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Hero Section - Matches Email Template */}
+      <div className="bg-gradient-to-br from-uf-blue via-blue-700 to-uf-orange text-white py-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: '#FA4616' }}>
+            You've been invited to join UFbiz! 🐊
+          </h1>
+          {inviteData ? (
+            <p className="text-xl text-blue-100 mb-2">
+              You've been invited to manage events for <strong>{inviteData.organizationName}</strong> on <strong>UFbiz</strong>
+            </p>
+          ) : (
+            <p className="text-xl text-blue-100 mb-2">
+              The hub for business organizations and events at the University of Florida
+            </p>
+          )}
+          <p className="text-lg text-blue-100">
+            Click below to create your account and start managing your organization's events
+          </p>
         </div>
       </div>
 
       {/* Sign Up Form */}
-      <div className="py-16">
+      <div className="py-12">
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="card p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Set Your Password
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+              Create Your Account
             </h2>
+            <p className="text-center text-gray-600 mb-6">
+              Set your password to get started
+            </p>
 
             {inviteData && (
-              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Email:</strong> {inviteData.email}
+              <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  <strong>Email:</strong> <span className="text-gray-900">{inviteData.email}</span>
                 </p>
-                {inviteData.organizationName && (
-                  <p className="text-sm text-blue-800 mt-1">
-                    <strong>Organization:</strong> {inviteData.organizationName}
+                {inviteData.organizationName && inviteData.organizationName !== 'your organization' && (
+                  <p className="text-sm text-gray-700 mt-2">
+                    <strong>Organization:</strong> <span className="text-gray-900">{inviteData.organizationName}</span>
                   </p>
                 )}
               </div>
@@ -295,7 +357,10 @@ function SignUp() {
 
               <button
                 type="submit"
-                className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+                className="w-full py-3 px-6 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#0021A5' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#001a85'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#0021A5'}
                 disabled={loading}
               >
                 {loading ? (
@@ -304,10 +369,14 @@ function SignUp() {
                     Creating account...
                   </>
                 ) : (
-                  'Create Account'
+                  'Create My Account'
                 )}
               </button>
             </form>
+
+            <p className="mt-6 text-sm text-gray-500 text-center">
+              This link will expire in 24 hours. If you didn't request this invite, you can safely ignore it.
+            </p>
 
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-sm text-gray-600 text-center">
@@ -317,6 +386,14 @@ function SignUp() {
                 </a>
               </p>
             </div>
+          </div>
+
+          {/* Footer matching email template */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-500">
+              Go Gators! 🐊<br />
+              - The UFbiz Team
+            </p>
           </div>
         </div>
       </div>
