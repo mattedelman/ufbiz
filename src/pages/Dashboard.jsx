@@ -1591,7 +1591,6 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
   }
 
   // Use edited data if available, otherwise fall back to organization data or clubs data
-  const orgData = clubs.find(c => c.name === organization.name)
   const displayData = {
     description: editedData.description || orgData?.description || organization.description || '',
     category: editedData.category.length > 0 ? editedData.category : (orgData?.category || organization.category || []),

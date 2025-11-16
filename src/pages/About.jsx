@@ -91,7 +91,7 @@ function About() {
                 />
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">Matthew Edelman</h3>
-                  <p className="text-gray-600">Founder & Developer</p>
+                  <p className="text-gray-600">Creator & Developer</p>
                 </div>
               </div>
               <p className="text-gray-700 mb-6">
