@@ -5,6 +5,8 @@ import { getCurrentUser, signOut } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { getAllUsers, getUnlinkedUsers, linkUserToOrganization, getAllOrganizations, inviteUserByEmail } from '../lib/admin'
 import { clubs } from '../data/clubs'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { 
   getMyOrganizationEvents, 
   createEvent, 
@@ -759,14 +761,19 @@ function Dashboard() {
                     Date *
                   </label>
                   <div className="relative">
-                    <input
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-medium shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
-                      style={{
-                        colorScheme: 'light',
+                    <DatePicker
+                      selected={formData.date ? new Date(formData.date) : null}
+                      onChange={(date) => {
+                        if (date) {
+                          const dateStr = date.toISOString().split('T')[0]
+                          setFormData({...formData, date: dateStr})
+                        }
                       }}
+                      dateFormat="MMMM d, yyyy"
+                      minDate={new Date()}
+                      placeholderText="Select date"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-medium shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
+                      wrapperClassName="w-full"
                       required
                     />
                   </div>
@@ -778,14 +785,22 @@ function Dashboard() {
                     Time *
                   </label>
                   <div className="relative">
-                    <input
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => setFormData({...formData, time: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-medium shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
-                      style={{
-                        colorScheme: 'light',
+                    <DatePicker
+                      selected={formData.time ? new Date(`2000-01-01T${formData.time}`) : null}
+                      onChange={(date) => {
+                        if (date) {
+                          const timeStr = date.toTimeString().slice(0, 5)
+                          setFormData({...formData, time: timeStr})
+                        }
                       }}
+                      showTimeSelect
+                      showTimeSelectOnly
+                      timeIntervals={15}
+                      timeCaption="Time"
+                      dateFormat="h:mm aa"
+                      placeholderText="Select time"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-medium shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
+                      wrapperClassName="w-full"
                       required
                     />
                   </div>
@@ -945,12 +960,22 @@ function Dashboard() {
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             End Date (optional)
                           </label>
-                          <input
-                            type="date"
-                            value={formData.recurrenceEndDate}
-                            onChange={(e) => setFormData({...formData, recurrenceEndDate: e.target.value})}
-                            min={formData.date}
+                          <DatePicker
+                            selected={formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate) : null}
+                            onChange={(date) => {
+                              if (date) {
+                                const dateStr = date.toISOString().split('T')[0]
+                                setFormData({...formData, recurrenceEndDate: dateStr})
+                              } else {
+                                setFormData({...formData, recurrenceEndDate: ''})
+                              }
+                            }}
+                            minDate={formData.date ? new Date(formData.date) : new Date()}
+                            dateFormat="MMMM d, yyyy"
+                            placeholderText="Select end date"
+                            isClearable
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+                            wrapperClassName="w-full"
                           />
                           <p className="text-xs text-gray-500 mt-1">Events will stop on this date or after the number of occurrences, whichever comes first</p>
                         </div>

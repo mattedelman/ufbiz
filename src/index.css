@@ -2,6 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* React DatePicker Custom Styles */
+.react-datepicker {
+  @apply font-sans border-2 border-gray-200 rounded-lg shadow-xl;
+}
+
+.react-datepicker__header {
+  @apply bg-gradient-to-r from-blue-600 to-blue-700 border-b-0 rounded-t-lg;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  @apply text-white font-bold text-lg py-3;
+}
+
+.react-datepicker__day-name {
+  @apply text-white font-semibold text-sm;
+}
+
+.react-datepicker__day {
+  @apply text-gray-700 hover:bg-orange-100 rounded-md transition-colors font-medium;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  @apply bg-orange-500 text-white hover:bg-orange-600 font-bold;
+}
+
+.react-datepicker__day--today {
+  @apply font-bold border-2 border-blue-600 bg-blue-50;
+}
+
+.react-datepicker__day--disabled {
+  @apply text-gray-300 hover:bg-transparent cursor-not-allowed;
+}
+
+.react-datepicker__navigation {
+  @apply top-4;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-white;
+}
+
+.react-datepicker__time-container {
+  @apply border-l-2 border-gray-200;
+}
+
+.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box {
+  @apply w-full;
+}
+
+.react-datepicker__time-list-item {
+  @apply hover:bg-orange-100 text-gray-700 font-medium;
+}
+
+.react-datepicker__time-list-item--selected {
+  @apply bg-orange-500 text-white hover:bg-orange-600 font-bold;
+}
+
+.react-datepicker__input-container input {
+  @apply w-full;
+}
+
+.react-datepicker-popper {
+  @apply z-50;
+}
+
+.react-datepicker__triangle {
+  @apply hidden;
+}
+
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
