@@ -3,7 +3,7 @@ import { Plus, Calendar, MapPin, Clock, ExternalLink, Edit2, Trash2, LogOut, Bui
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser, signOut } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { getAllUsers, getUnlinkedUsers, linkUserToOrganization, getAllOrganizations, inviteUserByEmail } from '../lib/admin'
+import { getAllUsers, getUnlinkedUsers, linkUserToOrganization, getAllOrganizations, inviteUserByEmail, updateOrganization } from '../lib/admin'
 import { clubs } from '../data/clubs'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
@@ -1134,7 +1134,11 @@ function Dashboard() {
         {showOrgModal && (
           <OrganizationModal 
             organization={loggedInOrganization} 
-            onClose={() => setShowOrgModal(false)} 
+            onClose={() => setShowOrgModal(false)}
+            onUpdate={(updatedOrg) => {
+              // Update the logged in organization state
+              setLoggedInOrganization(updatedOrg)
+            }}
           />
         )}
 
@@ -1541,13 +1545,129 @@ function CalendarView({ events, eventsByMonth, onEdit, onDelete, onDuplicate }) 
 }
 
 // Organization Modal Component
-function OrganizationModal({ organization, onClose }) {
+function OrganizationModal({ organization, onClose, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  
+  // Get initial data from organization or clubs data
+  const orgData = clubs.find(c => c.name === organization?.name)
+  const getInitialData = () => ({
+    description: organization?.description || orgData?.description || '',
+    category: organization?.category || orgData?.category || [],
+    website: organization?.website || orgData?.website || '',
+    email: organization?.email || orgData?.email || '',
+    image: organization?.image || orgData?.image || ''
+  })
+  
+  const [editedData, setEditedData] = useState(getInitialData)
+  
+  // Update editedData when organization changes
+  useEffect(() => {
+    const currentOrgData = clubs.find(c => c.name === organization?.name)
+    setEditedData({
+      description: organization?.description || currentOrgData?.description || '',
+      category: organization?.category || currentOrgData?.category || [],
+      website: organization?.website || currentOrgData?.website || '',
+      email: organization?.email || currentOrgData?.email || '',
+      image: organization?.image || currentOrgData?.image || ''
+    })
+    setSaveError(null) // Clear any previous errors
+    setSaveSuccess(false) // Clear success message
+  }, [organization])
+
+  // Get available categories from clubs data
+  const allCategories = [
+    'Investment Funds', 'Finance', 'General Business', 'Diversity',
+    'Marketing', 'Professional Development', 'Honor Society', 'Accounting',
+    'Fraternity', 'Entrepreneurship', 'Technology', 'Program',
+    'Consulting', 'Real Estate', 'Supply Chain', 'Healthcare',
+    'Sustainability', 'Non-Profit', 'Other'
+  ]
+
   if (!organization) {
     return null
   }
-  
+
+  // Use edited data if available, otherwise fall back to organization data or clubs data
   const orgData = clubs.find(c => c.name === organization.name)
-  
+  const displayData = {
+    description: editedData.description || orgData?.description || organization.description || '',
+    category: editedData.category.length > 0 ? editedData.category : (orgData?.category || organization.category || []),
+    website: editedData.website || orgData?.website || organization.website || '',
+    email: editedData.email || orgData?.email || organization.email || '',
+    image: editedData.image || organization.image || orgData?.image || ''
+  }
+
+  const handleSave = async () => {
+    if (!organization?.id) {
+      setSaveError('Organization ID not found')
+      return
+    }
+
+    setIsSaving(true)
+    setSaveError(null)
+
+    try {
+      // Prepare data for update - ensure category is an array
+      const updateData = {
+        description: editedData.description || null,
+        category: Array.isArray(editedData.category) && editedData.category.length > 0 
+          ? editedData.category 
+          : null,
+        website: editedData.website || null,
+        email: editedData.email || null,
+        image: editedData.image || null
+      }
+
+      // Call backend to update organization
+      const updatedOrg = await updateOrganization(organization.id, updateData)
+      
+      // Update parent component with new data
+      if (onUpdate) {
+        onUpdate(updatedOrg)
+      }
+      
+      setIsEditing(false)
+      setSaveSuccess(true)
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(false)
+      }, 3000)
+    } catch (error) {
+      console.error('Error updating organization:', error)
+      setSaveError(error.message || 'Failed to update organization. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    // Reset to original values
+    const currentOrgData = clubs.find(c => c.name === organization?.name)
+    setEditedData({
+      description: organization?.description || currentOrgData?.description || '',
+      category: organization?.category || currentOrgData?.category || [],
+      website: organization?.website || currentOrgData?.website || '',
+      email: organization?.email || currentOrgData?.email || '',
+      image: organization?.image || currentOrgData?.image || ''
+    })
+    setIsEditing(false)
+  }
+
+  const toggleCategory = (category) => {
+    setEditedData(prev => {
+      const currentCategories = Array.isArray(prev.category) ? prev.category : []
+      if (currentCategories.includes(category)) {
+        return { ...prev, category: currentCategories.filter(c => c !== category) }
+      } else {
+        return { ...prev, category: [...currentCategories, category] }
+      }
+    })
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div 
@@ -1556,22 +1676,57 @@ function OrganizationModal({ organization, onClose }) {
       >
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-start justify-between z-10">
           <h2 className="text-2xl font-bold text-gray-900">Organization Information</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            {!isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-uf-blue text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                Edit
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
           {/* Logo */}
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-4 border-gray-200 flex-shrink-0">
-              {organization.image ? (
+              {displayData.image ? (
                 <img 
-                  src={organization.image} 
+                  src={displayData.image} 
                   alt={organization.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -1588,70 +1743,154 @@ function OrganizationModal({ organization, onClose }) {
             </div>
           </div>
 
-          {/* Description */}
-          {orgData?.description && (
+          {/* Photo URL - Editable */}
+          {isEditing ? (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-              <p className="text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                {orgData.description}
-              </p>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Photo URL
+              </label>
+              <input
+                type="url"
+                value={editedData.image}
+                onChange={(e) => setEditedData({ ...editedData, image: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+                placeholder="https://example.com/image.jpg"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter a URL to an image</p>
             </div>
-          )}
+          ) : null}
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+            {isEditing ? (
+              <textarea
+                value={editedData.description}
+                onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent resize-none"
+                rows="6"
+                placeholder="Enter organization description..."
+              />
+            ) : (
+              <p className="text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                {displayData.description || 'No description available'}
+              </p>
+            )}
+          </div>
 
           {/* Categories */}
-          {orgData?.category && orgData.category.length > 0 && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Categories</label>
-              <div className="flex flex-wrap gap-2">
-                {(Array.isArray(orgData.category) ? orgData.category : [orgData.category]).map((cat, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-uf-blue/10 text-uf-blue text-sm font-medium rounded-full">
-                    {cat}
-                  </span>
-                ))}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Categories</label>
+            {isEditing ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {allCategories.map((cat) => {
+                    const isSelected = Array.isArray(editedData.category) && editedData.category.includes(cat)
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleCategory(cat)}
+                        className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+                          isSelected
+                            ? 'bg-uf-blue text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Selected: {Array.isArray(editedData.category) ? editedData.category.length : 0} category(ies)
+                </p>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {Array.isArray(displayData.category) && displayData.category.length > 0 ? (
+                  displayData.category.map((cat, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-uf-blue/10 text-uf-blue text-sm font-medium rounded-full">
+                      {cat}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No categories</p>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Contact Info */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Website</label>
-              {orgData?.website ? (
-                <a 
-                  href={orgData.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-uf-blue hover:text-blue-700 flex items-center gap-2"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Visit Website
-                </a>
+              {isEditing ? (
+                <input
+                  type="url"
+                  value={editedData.website}
+                  onChange={(e) => setEditedData({ ...editedData, website: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+                  placeholder="https://example.com"
+                />
               ) : (
-                <p className="text-gray-500">No website</p>
+                displayData.website ? (
+                  <a 
+                    href={displayData.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-uf-blue hover:text-blue-700 flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Visit Website
+                  </a>
+                ) : (
+                  <p className="text-gray-500">No website</p>
+                )
               )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
-              {orgData?.email ? (
-                <a 
-                  href={`mailto:${orgData.email}`}
-                  className="text-uf-blue hover:text-blue-700"
-                >
-                  {orgData.email}
-                </a>
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={editedData.email}
+                  onChange={(e) => setEditedData({ ...editedData, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+                  placeholder="contact@example.com"
+                />
               ) : (
-                <p className="text-gray-500">No email</p>
+                displayData.email ? (
+                  <a 
+                    href={`mailto:${displayData.email}`}
+                    className="text-uf-blue hover:text-blue-700"
+                  >
+                    {displayData.email}
+                  </a>
+                ) : (
+                  <p className="text-gray-500">No email</p>
+                )
               )}
             </div>
           </div>
 
-          {/* Edit Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Organization profile editing will be available when backend integration is complete. 
-              For now, contact the admin to update your organization information.
-            </p>
-          </div>
+          {/* Error Message */}
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800">
+                <strong>Error:</strong> {saveError}
+              </p>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {saveSuccess && !isEditing && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm text-green-800">
+                <strong>Success:</strong> Organization information has been saved.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

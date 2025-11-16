@@ -73,6 +73,28 @@ export async function getAllOrganizations() {
   return data
 }
 
+// Update organization
+export async function updateOrganization(organizationId, organizationData) {
+  const { data, error } = await supabase
+    .from('organizations')
+    .update({
+      description: organizationData.description || null,
+      category: organizationData.category || null,
+      website: organizationData.website || null,
+      email: organizationData.email || null,
+      image: organizationData.image || null
+    })
+    .eq('id', organizationId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Update organization error:', error)
+    throw error
+  }
+  return data
+}
+
 // Invite user by email
 export async function inviteUserByEmail(email, organizationId, organizationName) {
   if (!supabaseAdmin) {
