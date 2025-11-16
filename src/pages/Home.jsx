@@ -10,23 +10,23 @@ function FAQ() {
   const faqs = [
     {
       question: "What is UFbiz?",
-      answer: "UFbiz is a comprehensive resource platform for business-related organizations, programs, and events at the University of Florida. It helps students discover organizations, programs, find events, and connect with the business community on campus."
+      answer: "UFbiz is a student-built hub for business-related organizations, programs, and events at the University of Florida. It helps you discover clubs, track events, and plug into the business community on campus."
     },
     {
       question: "How do I join a club?",
-      answer: "Each club has contact information listed on their profile page. You can reach out via email or visit their website to learn about membership requirements and meeting times."
+      answer: "Each club has contact information listed on its profile page. You can reach out via email or visit their website to learn about membership requirements, interest forms, and meeting times."
     },
     {
       question: "Are the events free to attend?",
-      answer: "Most events are free for UF students, though some may require RSVP or have limited capacity. Check the event details for specific information about registration and any fees."
+      answer: "Most events are free for UF students, though some may require RSVP or have limited capacity. Check the event details for information about registration, deadlines, and any fees."
     },
     {
       question: "How do I add my club or event?",
-      answer: "If you'd like to add your business club or event to UFbiz, please contact us through the About page. We're always looking to expand our directory!"
+      answer: "If you'd like to add your business club or event to UFbiz, contact us through the About page. We're always looking to expand the directory with new organizations and opportunities."
     },
     {
       question: "Is UFbiz only for business majors?",
-      answer: "No! UFbiz is open to all UF students interested in business, regardless of major. Many clubs welcome students from various academic backgrounds."
+      answer: "No. UFbiz is open to all UF students interested in business, regardless of major. Many clubs welcome students from a wide range of academic backgrounds."
     }
   ]
 
@@ -93,52 +93,6 @@ function RotatingMajor() {
   )
 }
 
-function ClubLogosAnimation() {
-  // Filter clubs that have images
-  const clubsWithImages = clubs.filter(club => club.image && club.image.trim() !== '')
-  
-  // Duplicate the array to create seamless loop
-  const duplicatedClubs = [...clubsWithImages, ...clubsWithImages]
-
-  return (
-    <div className="py-16 bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Our <span className="text-uf-blue">Organizations</span> & <span className="text-uf-orange">Programs</span>
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover the diverse community of business organizations and programs at UF
-          </p>
-        </div>
-        
-        {/* Scrolling Animation Container */}
-        <div className="relative overflow-hidden">
-          {/* Scrolling logos */}
-          <div className="flex gap-8 animate-scroll">
-            {duplicatedClubs.map((club, index) => (
-              <div
-                key={`${club.id}-${index}`}
-                className="flex-shrink-0 w-28 h-28 rounded-full hover:scale-110 transition-transform duration-300 cursor-pointer"
-                title={club.name}
-              >
-                <img
-                  src={club.image}
-                  alt={club.name}
-                  className="w-full h-full rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none'
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function Home() {
   const features = [
     {
@@ -158,13 +112,6 @@ function Home() {
     }
   ]
 
-  const stats = [
-    { number: "50+", label: "Organizations & Programs" },
-    { number: "500+", label: "Active Members" },
-    { number: "50+", label: "Annual Events" },
-    { number: "100+", label: "Company Partners" }
-  ]
-
   return (
     <div>
       <SEO 
@@ -182,7 +129,7 @@ function Home() {
             </h1>
             <div className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               <p className="mb-2">
-                Business resources at the University of Florida
+                All your UF business clubs, programs, and events in one place.
               </p>
               <p className="flex items-center justify-center gap-2 flex-wrap">
                 <span>for</span>
@@ -192,26 +139,78 @@ function Home() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/clubs" className="btn-primary inline-block">
-                Explore Organizations
+                Explore Organizations & Programs
               </Link>
               <Link to="/events" className="bg-white text-uf-blue hover:bg-gray-100 font-semibold py-2 px-6 rounded-lg transition-colors duration-200 inline-block">
-                View Events
+                View Events Calendar
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <div className="bg-white py-12 border-b">
+      {/* Organizations & Programs Info Section */}
+      <div className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl font-bold text-uf-orange mb-2">{stat.number}</div>
-                <div className="text-gray-600">{stat.label}</div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              50+ <span className="text-uf-blue">Organizations</span> & <span className="text-uf-orange">Programs</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Our directory includes a diverse mix of student-run clubs and official School of Business programs, all designed to help you grow professionally and connect with the business community at UF.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6 mb-16">
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Student Clubs & Organizations</h3>
+              <p className="text-gray-600 mb-3">
+                Join student-run clubs focused on specific industries, career paths, or interests. Some clubs require an application process, while others welcome all interested students.
+              </p>
+              <p className="text-sm text-gray-500">
+                Examples: Finance clubs, consulting societies, marketing organizations, entrepreneurship groups
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">School of Business Programs</h3>
+              <p className="text-gray-600 mb-3">
+                Official programs and initiatives directly hosted by the UF Warrington College of Business. These programs provide structured learning opportunities and professional development.
+              </p>
+              <p className="text-sm text-gray-500">
+                Examples: Leadership programs, certificate programs, professional development initiatives
+              </p>
+            </div>
+          </div>
+
+          {/* Club Logos - Integrated into this section */}
+          <div className="mt-12">
+            <div className="text-center mb-8">
+              <p className="text-gray-600 font-medium">Explore some of our featured organizations</p>
+            </div>
+            <div className="relative overflow-hidden">
+              <div className="flex gap-8 animate-scroll">
+                {(() => {
+                  const clubsWithImages = clubs.filter(club => club.image && club.image.trim() !== '')
+                  const duplicatedClubs = [...clubsWithImages, ...clubsWithImages]
+                  return duplicatedClubs.map((club, index) => (
+                    <div
+                      key={`${club.id}-${index}`}
+                      className="flex-shrink-0 w-28 h-28 rounded-full hover:scale-110 transition-transform duration-300 cursor-pointer"
+                      title={club.name}
+                    >
+                      <img
+                        src={club.image}
+                        alt={club.name}
+                        className="w-full h-full rounded-full object-cover border-2 border-gray-200"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  ))
+                })()}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
@@ -244,9 +243,6 @@ function Home() {
         </div>
       </div>
 
-      {/* Club Logos Animation Section */}
-      <ClubLogosAnimation />
-
       {/* FAQ Section */}
       <div className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -272,7 +268,7 @@ function Home() {
             Find Your Community at UF
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Connect with like-minded business students and start building your professional network today
+            Connect with business-minded students across campus and start building your network today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/clubs" className="btn-primary inline-block">

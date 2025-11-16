@@ -177,8 +177,8 @@ function SignIn() {
             </p>
             <p className="text-sm text-blue-800 mt-2">
               If you're a club officer and need access, please contact{' '}
-              <a href="mailto:admin@ufbiz.com" className="font-medium underline">
-                admin@ufbiz.com
+              <a href="mailto:edelmanm@ufl.edu" className="font-medium underline">
+                edelmanm@ufl.edu
               </a>
             </p>
           </div>

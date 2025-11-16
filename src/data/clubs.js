@@ -201,10 +201,11 @@ export const clubs = [
   },
   {
     id: 23,
-    name: "Future Business Leaders of America",
+    name: "Future Business Leaders of America (FBLA)",
     category: ["General Business"],
+    description: "FBLA is a national organization that provides students with the opportunity to develop leadership, citizenship, and career skills. It is a great way to network with other business students and to get involved on campus.",
     website: "https://linktr.ee/uf.fbla",
-    image: "https://www.fbla.org/media/2022/08/FBLA_HorizontalLogo-600x464-1-1.png"
+    image: "https://ugc.production.linktr.ee/f86c1edd-8b58-453a-a284-d5d04dea24a4_IMG-8411.jpeg?io=true&size=avatar-v3_0"
 
   },
   {

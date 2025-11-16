@@ -27,11 +27,11 @@ function About() {
 
   const features = [
     "Comprehensive directory of business-related organizations and programs",
-    "Interactive events calendar with filtering",
-    "Detailed organization and program information and contact details",
-    "Mobile-friendly responsive design",
-    "Regular updates on upcoming events",
-    "Easy-to-use search and filter functionality"
+    "Interactive events calendar with powerful filtering",
+    "Detailed organization and program information with contact details",
+    "Mobile-friendly, responsive design",
+    "Regular updates on upcoming events and opportunities",
+    "Fast, easy-to-use search and filter functionality"
   ]
 
   return (
@@ -65,11 +65,10 @@ function About() {
               <div className="space-y-4 text-lg text-gray-700">
                 <p>
                   UFbiz was founded in November 2025 by <span className="font-semibold text-uf-blue">Matthew Edelman</span>, 
-                  a Computer Science and Business Administration student at the University of Florida .
+                  a Computer Science and Business Administration student at the University of Florida.
                 </p>
                 <p>
-                  After seeing the success of <span className="font-semibold">UF CSU</span> (UF Computing Student Union) 
-                  in bringing together CS students, Matthew was inspired to create a similar resource for the business community at UF.
+                  Recognizing the need for a centralized platform to connect business students, Matthew was inspired to create a comprehensive resource for the business community at UF.
                 </p>
                 <p>
                   As someone interested in both tech and business, Matthew noticed that while there were many great 
@@ -77,7 +76,7 @@ function About() {
                   born to solve this problem.
                 </p>
                 <p>
-                  Today, UFbiz serves as the go-to resource for business students looking to get involved, network, 
+                  Today, UFbiz serves as a go-to resource for business students looking to get involved, network, 
                   and build their professional skills at UF.
                 </p>
               </div>
@@ -96,8 +95,7 @@ function About() {
                 </div>
               </div>
               <p className="text-gray-700 mb-6">
-                "After trying to become more involved on campus with business clubs, I didn't have the best resources 
-                and wanted to create something like UF CSU for business students."
+                "When I tried getting more involved with business clubs on campus, it was hard to find everything in one place. UFbiz is my attempt to build a clear, modern hub for business students—similar to what UF CSU created for CS students."
               </p>
               <div className="flex gap-4">
                 <a 
@@ -196,33 +194,6 @@ function About() {
         </div>
       </div>
 
-      {/* Inspiration Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-r from-uf-blue to-blue-700 rounded-2xl p-8 md:p-12 text-white">
-            <div className="max-w-3xl">
-              <h2 className="text-3xl font-bold mb-4">Inspired by UF CSU</h2>
-              <p className="text-lg text-blue-100 mb-6">
-                UFbiz takes inspiration from the UF Computing Student Union (UF CSU), which has successfully 
-                built an amazing community for CS students at UF. Just as UF CSU provides resources, events, and 
-                connections for computer science students, UFbiz aims to do the same for the business community.
-              </p>
-              <a 
-                href="https://ufcsu.org" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white text-uf-blue px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Visit UF CSU
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* CTA Section */}
       <div className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -240,7 +211,7 @@ function About() {
               View Events
             </a>
             <a 
-              href="mailto:contact@ufbiz.com" 
+              href="mailto:edelmanm@ufl.edu" 
               className="bg-white text-gray-900 hover:bg-gray-100 font-semibold py-2 px-6 rounded-lg transition-colors duration-200 inline-block"
             >
               Contact Us

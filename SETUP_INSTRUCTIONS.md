@@ -16,7 +16,10 @@
 1. In your Supabase project dashboard, go to **Settings** → **API**
 2. Copy the following values:
    - **Project URL** (under "Project URL")
-   - **anon/public key** (under "Project API keys")
+   - **anon/public key** (under "Project API keys" - this is the `anon` key)
+   - **service_role key** (under "Project API keys" - click "Reveal" to show it)
+     - ⚠️ **IMPORTANT**: The service_role key has admin privileges. Keep it secret!
+     - You need this for the invite user functionality
 
 ## Step 3: Set Up Environment Variables
 
@@ -26,13 +29,24 @@
 ```env
 VITE_SUPABASE_URL=your_project_url_here
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
+VITE_SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+VITE_SITE_URL=https://ufbiz.com
 ```
+
+**Note:** `VITE_SITE_URL` is optional but recommended. If not set, it will use `https://ufbiz.com` in production builds, or `localhost` in development.
 
 **Example:**
 ```env
 VITE_SUPABASE_URL=https://abcdefghijklmnop.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (different from anon key)
 ```
+
+**Note about Service Role Key:**
+- This key is needed for the "Invite User" feature in your dashboard
+- It allows sending invite emails to new users
+- ⚠️ **Security Warning**: Never commit this key to git or expose it publicly
+- In production, consider moving invite functionality to a backend API
 
 ## Step 4: Create Database Schema
 

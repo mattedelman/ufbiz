@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, Calendar, MapPin, Clock, ExternalLink, Edit2, Trash2, LogOut, Building2, BarChart3, Copy, List, CalendarDays, X, CheckSquare, Square, Loader2 } from 'lucide-react'
+import { Plus, Calendar, MapPin, Clock, ExternalLink, Edit2, Trash2, LogOut, Building2, BarChart3, Copy, List, CalendarDays, X, CheckSquare, Square, Loader2, Mail, Send } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser, signOut } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { getAllUsers, getUnlinkedUsers, linkUserToOrganization, getAllOrganizations } from '../lib/admin'
+import { getAllUsers, getUnlinkedUsers, linkUserToOrganization, getAllOrganizations, inviteUserByEmail } from '../lib/admin'
 import { clubs } from '../data/clubs'
 import { 
   getMyOrganizationEvents, 
@@ -1110,15 +1110,6 @@ function Dashboard() {
           />
         )}
 
-        {/* Info Note */}
-        {!showAddForm && activeTab === 'events' && (
-          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Events added here are currently stored locally and will be reset on page refresh. 
-              Backend integration is coming soon to persist your events permanently.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -1718,6 +1709,12 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
   const [loading, setLoading] = useState(true)
   const [linking, setLinking] = useState(null)
   const [selectedOrg, setSelectedOrg] = useState({})
+  const [showInviteForm, setShowInviteForm] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteOrgId, setInviteOrgId] = useState('')
+  const [inviting, setInviting] = useState(false)
+  const [inviteError, setInviteError] = useState('')
+  const [inviteSuccess, setInviteSuccess] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -1763,6 +1760,41 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
     }
   }
 
+  const handleInviteUser = async (e) => {
+    e.preventDefault()
+    setInviteError('')
+    setInviteSuccess(false)
+
+    if (!inviteEmail || !inviteOrgId) {
+      setInviteError('Please enter an email and select an organization')
+      return
+    }
+
+    const selectedOrg = organizations.find(org => org.id === inviteOrgId)
+    if (!selectedOrg) {
+      setInviteError('Invalid organization selected')
+      return
+    }
+
+    try {
+      setInviting(true)
+      await inviteUserByEmail(inviteEmail, inviteOrgId, selectedOrg.name)
+      setInviteSuccess(true)
+      setInviteEmail('')
+      setInviteOrgId('')
+      setTimeout(() => {
+        setShowInviteForm(false)
+        setInviteSuccess(false)
+        loadData() // Refresh to show newly invited user
+      }, 2000)
+    } catch (error) {
+      console.error('Error inviting user:', error)
+      setInviteError(error.message || 'Failed to send invite. Please check that VITE_SUPABASE_SERVICE_ROLE_KEY is set in your .env file.')
+    } finally {
+      setInviting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="card p-12 text-center">
@@ -1774,11 +1806,110 @@ function UserLinkingView({ loggedInOrgId, onUserLinked }) {
 
   return (
     <div className="space-y-6">
+      {/* Invite User Section */}
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">Invite New User</h2>
+          <button
+            onClick={() => {
+              setShowInviteForm(!showInviteForm)
+              setInviteError('')
+              setInviteSuccess(false)
+            }}
+            className="px-4 py-2 bg-uf-orange text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+          >
+            {showInviteForm ? (
+              <>
+                <X className="h-4 w-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Invite User
+              </>
+            )}
+          </button>
+        </div>
+
+        {showInviteForm && (
+          <form onSubmit={handleInviteUser} className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            {inviteError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800">{inviteError}</p>
+              </div>
+            )}
+            {inviteSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800">
+                  ✓ Invite sent successfully! The user will receive an email to create their account.
+                </p>
+              </div>
+            )}
+            <div>
+              <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="email"
+                  id="inviteEmail"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+                  placeholder="user@example.com"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="inviteOrg" className="block text-sm font-medium text-gray-700 mb-2">
+                Organization
+              </label>
+              <select
+                id="inviteOrg"
+                value={inviteOrgId}
+                onChange={(e) => setInviteOrgId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+                required
+              >
+                <option value="">Select organization...</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="submit"
+              disabled={inviting}
+              className="w-full px-4 py-2 bg-uf-blue text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {inviting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sending invite...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Send Invite
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              The user will receive an email with a link to create their account. They'll be automatically linked to the selected organization.
+            </p>
+          </form>
+        )}
+      </div>
+
       <div className="card p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Link Users to Organizations</h2>
         <p className="text-gray-600 mb-6">
-          When you create a user in Supabase Auth, a profile is automatically created. 
-          Link them to an organization below to grant access.
+          Link existing users (who were created manually) to organizations below.
         </p>
 
         {unlinkedUsers.length === 0 ? (
