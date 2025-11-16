@@ -31,6 +31,8 @@ function SignUp() {
     const orgName = searchParams.get('org')
     const orgId = searchParams.get('orgId') // Get organization ID from URL
     
+    console.log('SignUp page loaded with:', { orgName, orgId, accessToken: !!accessToken })
+    
     // Check for errors first (expired links, etc.) - but only if there's NO access token
     const errorCode = hashParams.get('error_code')
     const errorDescription = hashParams.get('error_description')
@@ -97,6 +99,15 @@ function SignUp() {
       if (data.user) {
         // Extract organization_id from user metadata (stored when invite was sent)
         const userOrgId = data.user.app_metadata?.organization_id || data.user.user_metadata?.organization_id || orgId
+        
+        console.log('Extracted organization data:', {
+          fromAppMetadata: data.user.app_metadata?.organization_id,
+          fromUserMetadata: data.user.user_metadata?.organization_id,
+          fromURL: orgId,
+          finalOrgId: userOrgId,
+          userMetadata: data.user.app_metadata,
+          userUserMetadata: data.user.user_metadata
+        })
         
         setInviteData({
           email: data.user.email,
@@ -212,55 +223,70 @@ function SignUp() {
       if (updateError) throw updateError
 
       // Automatically link user to organization if we have the organization ID
-      if (inviteData?.userId && inviteData?.organizationId) {
-        try {
-          // Wait a moment for the profile to be created by the trigger (if it hasn't been created yet)
-          await new Promise(resolve => setTimeout(resolve, 500))
-          
-          // Try to link the user, with retry logic in case profile doesn't exist yet
-          let linked = false
-          let attempts = 0
-          const maxAttempts = 3
-          
-          while (!linked && attempts < maxAttempts) {
-            try {
-              await linkUserToOrganization(inviteData.userId, inviteData.organizationId, inviteData.email)
-              linked = true
-              console.log('User successfully linked to organization')
-            } catch (linkError) {
-              attempts++
-              if (attempts < maxAttempts) {
-                // Wait a bit longer and try again (profile might still be creating)
-                await new Promise(resolve => setTimeout(resolve, 1000))
-              } else {
-                throw linkError
+      if (inviteData?.userId) {
+        // Ensure we have a valid organization ID
+        const orgIdToLink = inviteData.organizationId
+        
+        if (!orgIdToLink || orgIdToLink === 'null' || orgIdToLink === 'undefined') {
+          console.error('Invalid organization ID:', orgIdToLink)
+          setError('Account created, but organization information is missing. Please contact your administrator to link you to an organization.')
+        } else {
+          try {
+            console.log('Linking user to organization:', {
+              userId: inviteData.userId,
+              organizationId: orgIdToLink,
+              email: inviteData.email
+            })
+            
+            // Wait a moment for the profile to be created by the trigger (if it hasn't been created yet)
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // Try to link the user, with retry logic in case profile doesn't exist yet
+            let linked = false
+            let attempts = 0
+            const maxAttempts = 3
+            
+            while (!linked && attempts < maxAttempts) {
+              try {
+                const result = await linkUserToOrganization(inviteData.userId, orgIdToLink, inviteData.email)
+                linked = true
+                console.log('User successfully linked to organization:', result)
+                
+                // Verify the link was successful
+                const { data: profile } = await supabase
+                  .from('user_profiles')
+                  .select('organization_id')
+                  .eq('id', inviteData.userId)
+                  .single()
+                
+                if (profile?.organization_id === orgIdToLink) {
+                  console.log('Verified: User is linked to organization')
+                } else {
+                  console.warn('Warning: Link verification failed', { profile, expectedOrgId: orgIdToLink })
+                }
+              } catch (linkError) {
+                console.error(`Link attempt ${attempts + 1} failed:`, linkError)
+                attempts++
+                if (attempts < maxAttempts) {
+                  // Wait a bit longer and try again (profile might still be creating)
+                  await new Promise(resolve => setTimeout(resolve, 1000))
+                } else {
+                  throw linkError
+                }
               }
             }
+          } catch (linkError) {
+            console.error('Error linking user to organization:', linkError)
+            // Don't fail the sign-up if linking fails - user can be linked manually
+            setError('Account created, but there was an issue linking you to your organization. Please contact your administrator.')
           }
-        } catch (linkError) {
-          console.error('Error linking user to organization:', linkError)
-          // Don't fail the sign-up if linking fails - user can be linked manually
-          setError('Account created, but there was an issue linking you to your organization. Please contact your administrator.')
         }
-      } else if (inviteData?.userId) {
-        // If we don't have organization ID, try to find it by name (fallback)
-        try {
-          const { data: orgs } = await supabase
-            .from('organizations')
-            .select('id')
-            .ilike('name', `%${inviteData.organizationName}%`)
-            .limit(1)
-            .single()
-
-          if (orgs) {
-            await linkUserToOrganization(inviteData.userId, orgs.id, inviteData.email)
-          } else {
-            console.warn('Could not find organization to link user to')
-          }
-        } catch (linkError) {
-          console.error('Error linking user to organization:', linkError)
-          setError('Account created, but there was an issue linking you to your organization. Please contact your administrator.')
-        }
+      } else {
+        console.warn('Cannot link user - missing userId:', {
+          hasUserId: !!inviteData?.userId,
+          hasOrganizationId: !!inviteData?.organizationId,
+          inviteData: inviteData
+        })
       }
 
       setSuccess(true)

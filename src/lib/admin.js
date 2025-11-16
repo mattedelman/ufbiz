@@ -84,6 +84,8 @@ export async function inviteUserByEmail(email, organizationId, organizationName)
   const siteUrl = import.meta.env.VITE_SITE_URL || 'https://ufbiz.com'
   const redirectTo = `${siteUrl}/signup?invite=true&org=${encodeURIComponent(organizationName || '')}&orgId=${organizationId}`
 
+  console.log('Inviting user with organization:', { email, organizationId, organizationName, redirectTo })
+  
   // Invite user with custom redirect
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     redirectTo: redirectTo,
@@ -93,7 +95,12 @@ export async function inviteUserByEmail(email, organizationId, organizationName)
     }
   })
 
-  if (error) throw error
+  if (error) {
+    console.error('Error inviting user:', error)
+    throw error
+  }
+
+  console.log('User invited successfully:', { userId: data.user?.id, userMetadata: data.user?.app_metadata })
 
   // If user profile was auto-created, link them to organization
   if (data.user) {
@@ -101,11 +108,12 @@ export async function inviteUserByEmail(email, organizationId, organizationName)
       // Wait a moment for the trigger to create the profile
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      // Link user to organization
-      await linkUserToOrganization(data.user.id, organizationId, email)
+      // Link user to organization immediately (backup in case sign-up linking fails)
+      const linkResult = await linkUserToOrganization(data.user.id, organizationId, email)
+      console.log('User linked to organization immediately after invite:', linkResult)
     } catch (linkError) {
-      // Profile might not exist yet, that's okay - it will be created by trigger
-      console.log('Note: User profile will be created automatically by trigger')
+      // Profile might not exist yet, that's okay - it will be created by trigger and linked during sign-up
+      console.log('Note: Could not link immediately, will be linked during sign-up:', linkError.message)
     }
   }
 
