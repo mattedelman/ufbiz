@@ -82,15 +82,15 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-uf-orange hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200;
+    @apply bg-uf-orange hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105;
   }
   
   .btn-secondary {
-    @apply bg-uf-blue hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200;
+    @apply bg-uf-blue hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105;
   }
   
   .card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300;
   }
   
   .animate-scroll {
@@ -101,6 +101,11 @@
   
   .animate-scroll:hover {
     animation-play-state: paused;
+  }
+  
+  /* Custom focus styles */
+  input:focus, textarea:focus, select:focus {
+    @apply ring-2 ring-uf-orange/50 border-uf-orange outline-none;
   }
 }
 

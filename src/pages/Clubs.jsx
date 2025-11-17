@@ -166,39 +166,39 @@ function ClubCard({ club, onToggle }) {
 
   return (
     <div 
-      className="card p-4 flex flex-col cursor-pointer hover:shadow-lg transition-shadow"
+      className="group bg-white rounded-2xl p-6 flex flex-col cursor-pointer border-2 border-gray-100 hover:border-uf-orange/30 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
       onClick={onToggle}
     >
-      <div className={`flex items-start mb-3 ${club.image ? 'gap-3' : ''}`}>
+      <div className={`flex items-start mb-4 ${club.image ? 'gap-4' : ''}`}>
         {/* Club Logo/Image - Only show if image exists */}
         {club.image && !imageError && (
           <img
             src={club.image}
             alt={club.name}
-            className="flex-shrink-0 w-12 h-12 rounded-full object-cover border-2 border-gray-200 shadow-md"
+            className="flex-shrink-0 w-14 h-14 rounded-xl object-cover border-2 border-gray-200 shadow-sm group-hover:scale-110 transition-transform"
             onError={() => setImageError(true)}
           />
         )}
         <div className="flex-grow min-w-0">
-          <div className="mb-1 flex flex-wrap gap-1">
+          <div className="mb-2 flex flex-wrap gap-1.5">
             {(Array.isArray(club.category) ? club.category : [club.category]).map((cat, idx) => (
               cat && (
-                <span key={idx} className="inline-block px-2 py-0.5 bg-uf-orange/10 text-uf-orange text-xs font-semibold rounded-full">
+                <span key={idx} className="inline-block px-2.5 py-1 bg-uf-orange/10 text-uf-orange text-xs font-semibold rounded-lg">
                   {cat}
                 </span>
               )
             ))}
           </div>
-          <h3 className="text-lg font-bold leading-tight">{club.name}</h3>
+          <h3 className="text-xl font-bold leading-tight text-gray-900 group-hover:text-uf-blue transition-colors">{club.name}</h3>
         </div>
       </div>
-      <p className="text-gray-600 text-sm mb-3 flex-grow line-clamp-3">{club.description}</p>
+      <p className="text-gray-600 mb-4 flex-grow leading-relaxed line-clamp-3">{club.description}</p>
       
       {club.members && (
-        <div className="space-y-1.5 text-xs text-gray-700 mb-3">
-          <div className="flex items-center">
-            <Users className="h-3 w-3 mr-1.5 text-uf-orange flex-shrink-0" />
-            <span>{club.members} members</span>
+        <div className="mb-4 text-sm text-gray-700">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+            <Users className="h-4 w-4 text-uf-orange flex-shrink-0" />
+            <span className="font-medium">{club.members} members</span>
           </div>
         </div>
       )}
@@ -208,9 +208,9 @@ function ClubCard({ club, onToggle }) {
           <a
             href={`mailto:${club.email}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-uf-blue text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-uf-blue text-white rounded-xl hover:bg-blue-700 transition-all text-sm font-medium hover:scale-105"
           >
-            <Mail className="h-3 w-3" />
+            <Mail className="h-4 w-4" />
             Contact
           </a>
         )}
@@ -220,9 +220,9 @@ function ClubCard({ club, onToggle }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-xs font-medium"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl hover:border-uf-orange hover:text-uf-orange transition-all text-sm font-medium"
           >
-            <ExternalLink className="h-3 w-3" />
+            <ExternalLink className="h-4 w-4" />
             Website
           </a>
         )}
@@ -347,6 +347,34 @@ function Clubs() {
     return a.name.localeCompare(b.name)
   })
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "UF Business Organizations & Programs",
+    "description": "Browse 50+ business organizations and programs at the University of Florida. Find clubs, societies, and programs that match your interests and career goals.",
+    "url": "https://ufbiz.com/clubs",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "UFbiz",
+      "url": "https://ufbiz.com"
+    },
+    "about": {
+      "@type": "ItemList",
+      "name": "Business Organizations",
+      "numberOfItems": clubs.length,
+      "itemListElement": clubs.slice(0, 10).map((club, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
+          "@type": "Organization",
+          "name": club.name,
+          "description": club.description,
+          "url": club.instagram || club.linkedin || club.website
+        }
+      }))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO 
@@ -354,63 +382,70 @@ function Clubs() {
         description="Browse 50+ business organizations and programs at the University of Florida. Find clubs, societies, and programs that match your interests and career goals."
         keywords="UF business organizations, UF business clubs, UF business programs, UF student organizations, UF business societies"
         canonical="/clubs"
+        structuredData={structuredData}
       />
       {/* Header */}
-      <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Business Organizations & Programs</h1>
-          <p className="text-lg text-blue-100 max-w-3xl">
-            Discover organizations and programs that match your interests and career goals
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-12 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 right-20 w-64 h-64 border-2 border-white rounded-full"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 border border-white rounded-full"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
+            <span className="text-sm font-semibold text-white">50+ Organizations & Programs</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Organizations & programs</h1>
+          <p className="text-xl text-blue-100">
+            Find the perfect fit for your interests and goals
           </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Search & Sort */}
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="relative w-full md:max-w-xl">
+        {/* Search Bar */}
+        <div className="mb-4">
+          <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="Search clubs by name or description..."
+              placeholder="Search organizations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-uf-orange focus:border-transparent"
+              className="w-full pl-12 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-uf-orange focus:border-transparent"
             />
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 text-gray-600 text-sm font-medium">
-              <ArrowDownAZ className="h-4 w-4" />
-              <span>Sort by:</span>
-            </div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gray-300 rounded-lg py-2 pl-3 pr-8 text-sm focus:ring-2 focus:ring-uf-orange focus:border-transparent bg-white"
-            >
-              <option value="name">Name (A-Z)</option>
-              <option value="category">Category (A-Z)</option>
-            </select>
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Filter className="text-gray-600 h-5 w-5" />
-            <span className="text-gray-700 font-medium">Filter:</span>
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-uf-orange text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+        {/* Compact Filter & Sort Row */}
+        <div className="mb-6 flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Filter className="text-gray-600 h-4 w-4" />
+            <span className="text-sm text-gray-700 font-medium">Category:</span>
+          </div>
+          {categories.map(category => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                selectedCategory === category
+                  ? 'bg-uf-orange text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+          <div className="ml-auto flex items-center gap-2">
+            <ArrowDownAZ className="h-4 w-4 text-gray-600" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-gray-300 rounded-lg py-1.5 pl-2 pr-6 text-xs focus:ring-2 focus:ring-uf-orange focus:border-transparent bg-white"
+            >
+              <option value="name">A-Z</option>
+              <option value="category">Category</option>
+            </select>
           </div>
         </div>
 

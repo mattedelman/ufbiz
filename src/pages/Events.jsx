@@ -165,6 +165,48 @@ function Events() {
     setSelectedDayEvents(dayEvents)
   }
 
+  const upcomingEvents = filteredEvents
+    .filter(event => new Date(event.date) >= new Date())
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 10)
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "UF Business Events Calendar",
+    "description": "Stay updated with upcoming business events, workshops, networking sessions, and competitions at the University of Florida.",
+    "url": "https://ufbiz.com/events",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "UFbiz",
+      "url": "https://ufbiz.com"
+    },
+    "about": {
+      "@type": "ItemList",
+      "name": "Upcoming Business Events",
+      "numberOfItems": upcomingEvents.length,
+      "itemListElement": upcomingEvents.map((event, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
+          "@type": "Event",
+          "name": event.title,
+          "description": event.description,
+          "startDate": `${event.date}T${event.time || '00:00'}`,
+          "location": event.location ? {
+            "@type": "Place",
+            "name": event.location
+          } : undefined,
+          "organizer": {
+            "@type": "Organization",
+            "name": event.club
+          },
+          "eventStatus": "https://schema.org/EventScheduled"
+        }
+      }))
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO 
@@ -172,26 +214,35 @@ function Events() {
         description="Stay updated with upcoming business events, workshops, networking sessions, and competitions at the University of Florida. Find events from UF business organizations."
         keywords="UF business events, UF networking events, UF workshops, UF business calendar, UF career events, UF business competitions"
         canonical="/events"
+        structuredData={structuredData}
       />
-      {/* Compact Header */}
-      <div className="bg-gradient-to-r from-uf-orange to-orange-600 text-white py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-12 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 right-20 w-64 h-64 border-2 border-white rounded-full"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 border border-white rounded-full"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-1">Calendar of Events</h1>
-              <p className="text-orange-100 text-sm">
-                From UF Business organizations and programs!
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
+                <span className="text-sm font-semibold text-white">Calendar & Events</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">Business events</h1>
+              <p className="text-xl text-blue-100">
+                From UF organizations & programs
               </p>
             </div>
             
-            {/* View Toggle - Moved to header */}
+            {/* View Toggle */}
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode('calendar')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   viewMode === 'calendar'
-                    ? 'bg-white text-uf-orange'
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                    ? 'bg-white text-uf-blue shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20'
                 }`}
               >
                 <CalendarDays className="h-4 w-4" />
@@ -199,10 +250,10 @@ function Events() {
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   viewMode === 'list'
-                    ? 'bg-white text-uf-orange'
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                    ? 'bg-white text-uf-blue shadow-lg'
+                    : 'bg-white/10 text-white hover:bg-white/20'
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -213,33 +264,35 @@ function Events() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        {/* Search and Organization Filter */}
-        <div className="mb-4 space-y-3">
-          {/* Search Bar */}
-          <div className="relative w-full max-w-2xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Search Bar */}
+        <div className="mb-4">
+          <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <input
               type="text"
-              placeholder="Search events by name, description, or organization..."
+              placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-uf-orange focus:border-transparent shadow-sm"
+              className="w-full pl-12 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-uf-orange focus:border-transparent"
             />
           </div>
+        </div>
 
+        {/* Organization Filter */}
+        <div className="mb-4 space-y-3">
           {/* Organization Filter Button & Selected Organizations */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowOrgFilter(!showOrgFilter)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 showOrgFilter || selectedOrganizations.length > 0
                   ? 'bg-uf-blue text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               <Building2 className="h-4 w-4" />
-              <span>Filter by Organization</span>
+              <span>Organization</span>
               {selectedOrganizations.length > 0 && (
                 <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">
                   {selectedOrganizations.length}
@@ -383,8 +436,8 @@ function Events() {
               </div>
             </div>
             
-            {/* Side Panel for Selected Day Events */}
-            <div className="lg:col-span-1">
+            {/* Side Panel for Selected Day Events - Desktop */}
+            <div className="hidden lg:block lg:col-span-1">
               <div className="bg-white rounded-xl shadow-lg sticky top-6 max-h-[calc(100vh-10rem)] overflow-y-auto">
                 {selectedDayEvents.length > 0 ? (
                   <div>
@@ -455,6 +508,84 @@ function Events() {
                 )}
               </div>
             </div>
+
+            {/* Mobile Events Panel - Shows below calendar on mobile */}
+            {selectedDayEvents.length > 0 && (
+              <div className="lg:hidden">
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-uf-blue text-white p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-blue-200">
+                          {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short' })}
+                        </p>
+                        <h3 className="text-2xl font-bold">
+                          {new Date(selectedDate).getDate()}
+                        </h3>
+                        <p className="text-sm text-blue-100">
+                          {new Date(selectedDate).toLocaleDateString('en-US', { 
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedDate(null)
+                          setSelectedDayEvents([])
+                        }}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <X className="h-6 w-6" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
+                    {selectedDayEvents.map(event => (
+                      <div key={event.id} className="border-l-4 border-uf-orange pl-4 py-2 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-bold text-gray-900 text-sm">{event.title}</h4>
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ml-2 ${getCategoryColor(event.category)}`}>
+                            {event.category}
+                          </span>
+                        </div>
+                        <p className="text-xs text-uf-blue font-medium mb-2">{event.club}</p>
+                        <p className="text-xs text-gray-600 mb-3">{event.description}</p>
+                        <div className="space-y-1 text-xs text-gray-700">
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-2 text-uf-orange" />
+                            <span>{event.time}</span>
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center">
+                              <MapPin className="h-3 w-3 mr-2 text-uf-orange" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                          {event.rsvp && (
+                            <div className="flex items-center text-green-600">
+                              <CheckCircle className="h-3 w-3 mr-2" />
+                              <span className="font-medium">RSVP Required</span>
+                            </div>
+                          )}
+                        </div>
+                        {isUpcoming(event.date) && event.linkText && event.linkUrl && (
+                          <a 
+                            href={event.linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 w-full bg-uf-orange text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-orange-600 transition-colors block text-center"
+                          >
+                            {event.linkText}
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
