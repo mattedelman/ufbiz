@@ -64,14 +64,14 @@ function SignIn() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-12">
+      <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-6 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-4">
-              <Lock className="h-8 w-8" />
+            <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-white/10 rounded-full mb-2 md:mb-4">
+              <Lock className="h-6 w-6 md:h-8 md:w-8" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Sign In</h1>
-            <p className="text-lg text-blue-100">
+            <h1 className="text-3xl md:text-4xl font-bold mb-1 md:mb-2">Admin Sign In</h1>
+            <p className="hidden md:block text-lg text-blue-100">
               For club administrators and event managers
             </p>
           </div>
@@ -79,7 +79,7 @@ function SignIn() {
       </div>
 
       {/* Sign In Form */}
-      <div className="py-16">
+      <div className="pt-8 pb-16 md:py-16">
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
           <div className="card p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">

@@ -80,22 +80,22 @@ function About() {
         structuredData={structuredData}
       />
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-20 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-8 md:py-20 overflow-hidden">
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-6">
+          <div className="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-6">
             <span className="text-sm font-semibold text-white">Built by students, for students</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 md:mb-4 text-white leading-tight">
             About
           </h1>
-          <p className="text-xl text-blue-100 leading-relaxed max-w-2xl mx-auto">
+          <p className="hidden md:block text-xl text-blue-100 leading-relaxed max-w-2xl mx-auto">
             Learn about UFbiz and how it helps UF students connect with the business community
           </p>
         </div>
       </div>
 
       {/* Story Section - Two Column Layout */}
-      <div className="py-16 bg-gray-50">
+      <div className="pt-8 pb-16 md:py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             {/* Left Column - Our Story */}

@@ -238,9 +238,14 @@ function AutoFormatDateInput({ value, onChange, required }) {
         const day = parts[1].padStart(2, '0')
         const year = parts[2]
         
-        // Validate date
-        const date = new Date(`${year}-${month}-${day}`)
-        if (!isNaN(date.getTime()) && date >= new Date().setHours(0,0,0,0)) {
+        // Validate date using local date to avoid timezone issues
+        const dateYear = parseInt(year, 10)
+        const dateMonth = parseInt(month, 10) - 1
+        const dateDay = parseInt(day, 10)
+        const date = new Date(dateYear, dateMonth, dateDay)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        if (!isNaN(date.getTime()) && date >= today) {
           onChange(`${year}-${month}-${day}`)
         }
       }
@@ -275,7 +280,11 @@ function AutoFormatDateInput({ value, onChange, required }) {
       {showCalendar && (
         <div className="absolute z-50 mt-2">
           <DatePicker
-            selected={value ? new Date(value) : null}
+            selected={value ? (() => {
+              // Parse date string directly to avoid timezone issues
+              const [year, month, day] = value.split('-').map(Number)
+              return new Date(year, month - 1, day)
+            })() : null}
             onChange={handleDatePickerChange}
             onClickOutside={() => setShowCalendar(false)}
             minDate={new Date()}
@@ -300,6 +309,36 @@ import {
   bulkUnpublishEvents
 } from '../lib/events'
 
+// Confirmation Modal Component
+function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmText = 'Delete', cancelText = 'Cancel', isDanger = true }) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-6">{message}</p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`px-4 py-2 text-white rounded-lg font-medium transition-colors ${
+              isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-uf-blue hover:bg-blue-700'
+            }`}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Dashboard() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
@@ -313,6 +352,7 @@ function Dashboard() {
   const [loggedInOrganization, setLoggedInOrganization] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedDayEvents, setSelectedDayEvents] = useState([])
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
   
   // Check authentication and load data on mount
   useEffect(() => {
@@ -481,6 +521,18 @@ function Dashboard() {
     return events
   }
 
+  // Helper function to normalize URL (add https:// if missing protocol)
+  const normalizeUrl = (url) => {
+    if (!url || url.trim() === '') return null
+    const trimmed = url.trim()
+    // If it already has a protocol, return as is
+    if (trimmed.match(/^https?:\/\//i)) {
+      return trimmed
+    }
+    // Otherwise, prepend https://
+    return `https://${trimmed}`
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -499,7 +551,7 @@ function Dashboard() {
           time: formData.time,
           location: formData.location || null,
           category: formData.category,
-          link_url: formData.linkUrl || null,
+          link_url: normalizeUrl(formData.linkUrl),
           link_text: formData.linkText || null,
           status: formData.status || 'draft'
         }
@@ -527,7 +579,7 @@ function Dashboard() {
           time: formData.time,
           location: formData.location || null,
           category: formData.category,
-          link_url: formData.linkUrl || null,
+          link_url: normalizeUrl(formData.linkUrl),
           link_text: formData.linkText || null,
           status: formData.status || 'draft'
         }
@@ -582,15 +634,23 @@ function Dashboard() {
   }
 
   const handleDelete = async (eventId) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      try {
-        await deleteEvent(eventId)
-        setEvents(events.filter(event => event.id !== eventId))
-      } catch (error) {
-        console.error('Error deleting event:', error)
-        alert('Failed to delete event. Please try again.')
+    const event = events.find(e => e.id === eventId)
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Event',
+      message: `Are you sure you want to delete "${event?.title || 'this event'}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deleteEvent(eventId)
+          setEvents(events.filter(event => event.id !== eventId))
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
+        } catch (error) {
+          console.error('Error deleting event:', error)
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
+          alert('Failed to delete event. Please try again.')
+        }
       }
-    }
+    })
   }
 
   const handleDuplicate = async (event) => {
@@ -668,16 +728,23 @@ function Dashboard() {
   }
 
   const handleBulkDelete = async () => {
-    if (window.confirm(`Are you sure you want to delete ${selectedEvents.length} event(s)?`)) {
-      try {
-        await deleteEvents(selectedEvents)
-        setEvents(events.filter(event => !selectedEvents.includes(event.id)))
-        setSelectedEvents([])
-      } catch (error) {
-        console.error('Error deleting events:', error)
-        alert('Failed to delete events. Please try again.')
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Multiple Events',
+      message: `Are you sure you want to delete ${selectedEvents.length} event(s)? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await deleteEvents(selectedEvents)
+          setEvents(events.filter(event => !selectedEvents.includes(event.id)))
+          setSelectedEvents([])
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
+        } catch (error) {
+          console.error('Error deleting events:', error)
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
+          alert('Failed to delete events. Please try again.')
+        }
       }
-    }
+    })
   }
 
   const handleBulkDuplicate = async () => {
@@ -752,11 +819,14 @@ function Dashboard() {
 
   // Group events by month for calendar view
   const eventsByMonth = events.reduce((acc, event) => {
-    const month = new Date(event.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    if (!acc[month]) {
-      acc[month] = []
+    // Parse date string directly to avoid timezone issues
+    const [year, month, day] = event.date.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    const monthStr = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    if (!acc[monthStr]) {
+      acc[monthStr] = []
     }
-    acc[month].push(event)
+    acc[monthStr].push(event)
     return acc
   }, {})
 
@@ -1116,11 +1186,11 @@ function Dashboard() {
                     Registration/Info Link
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.linkUrl}
                     onChange={(e) => setFormData({...formData, linkUrl: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent shadow-sm hover:border-gray-400 transition-colors"
-                    placeholder="https://example.com/register"
+                    placeholder="example.com/register or https://example.com/register"
                   />
                 </div>
 
@@ -1235,7 +1305,11 @@ function Dashboard() {
                             End Date (optional)
                           </label>
                           <DatePicker
-                            selected={formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate) : null}
+                            selected={formData.recurrenceEndDate ? (() => {
+                              // Parse date string directly to avoid timezone issues
+                              const [year, month, day] = formData.recurrenceEndDate.split('-').map(Number)
+                              return new Date(year, month - 1, day)
+                            })() : null}
                             onChange={(date) => {
                               if (date) {
                                 // Use local date to avoid timezone issues
@@ -1248,7 +1322,11 @@ function Dashboard() {
                                 setFormData({...formData, recurrenceEndDate: ''})
                               }
                             }}
-                            minDate={formData.date ? new Date(formData.date) : new Date()}
+                            minDate={formData.date ? (() => {
+                              // Parse date string directly to avoid timezone issues
+                              const [year, month, day] = formData.date.split('-').map(Number)
+                              return new Date(year, month - 1, day)
+                            })() : new Date()}
                             dateFormat="MMMM d, yyyy"
                             placeholderText="Select end date"
                             isClearable
@@ -1291,7 +1369,7 @@ function Dashboard() {
                           time: formData.time,
                           location: formData.location || null,
                           category: formData.category,
-                          link_url: formData.linkUrl || null,
+                          link_url: normalizeUrl(formData.linkUrl),
                           link_text: formData.linkText || null,
                           status: 'published'
                         }
@@ -1435,21 +1513,60 @@ function Dashboard() {
                   {selectedDayEvents.length > 0 ? (
                     <div>
                       <div className="bg-uf-blue text-white p-4 sticky top-0 rounded-t-xl">
-                        <p className="text-xs uppercase tracking-wide text-blue-200">
-                          {selectedDate && new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short' })}
-                        </p>
-                        <h3 className="text-2xl font-bold">
-                          {selectedDate && new Date(selectedDate).getDate()}
-                        </h3>
-                        <p className="text-sm text-blue-100">
-                          {selectedDate && `Events on ${new Date(selectedDate).toLocaleDateString('en-US', { 
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}`}
-                        </p>
+                        {selectedDate && (() => {
+                          // Parse date string directly to avoid timezone issues
+                          const [year, month, day] = selectedDate.split('-').map(Number)
+                          const dateObj = new Date(year, month - 1, day)
+                          return (
+                            <>
+                              <p className="text-xs uppercase tracking-wide text-blue-200">
+                                {dateObj.toLocaleDateString('en-US', { weekday: 'short' })}
+                              </p>
+                              <h3 className="text-2xl font-bold">
+                                {day}
+                              </h3>
+                              <p className="text-sm text-blue-100">
+                                Events on {dateObj.toLocaleDateString('en-US', { 
+                                  month: 'long',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                            </>
+                          )
+                        })()}
                       </div>
-                      <div className="p-4 space-y-4">
+                      <div className="px-4 pb-4">
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              date: selectedDate,
+                              title: '',
+                              description: '',
+                              time: '',
+                              location: '',
+                              category: '',
+                              linkUrl: '',
+                              linkText: '',
+                              isRecurring: false,
+                              recurrenceType: 'none',
+                              recurrenceEndDate: '',
+                              recurrenceCount: 1,
+                              recurrenceInterval: 1,
+                              status: 'draft'
+                            })
+                            setEditingEvent(null)
+                            setShowAddForm(true)
+                            setActiveTab('events')
+                          }}
+                          className="w-full px-4 py-2 bg-uf-orange text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center justify-center gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Create Event for This Date
+                        </button>
+                      </div>
+                      <div className="p-4 space-y-4 border-t">
                         {selectedDayEvents.map((event) => {
                           const isDraft = event.status === 'draft' || !event.status
                           return (
@@ -1463,7 +1580,7 @@ function Dashboard() {
                             >
                               <div className="flex items-start justify-between mb-2">
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
+                                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                                     <h4 className="font-bold text-gray-900">{event.title}</h4>
                                     {isDraft && (
                                       <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs font-semibold rounded">
@@ -1475,25 +1592,38 @@ function Dashboard() {
                                         Published
                                       </span>
                                     )}
+                                    {event.category && (
+                                      <span className="px-2 py-0.5 bg-uf-orange/10 text-uf-orange text-xs font-medium rounded-full">
+                                        {event.category}
+                                      </span>
+                                    )}
                                   </div>
+                                  {event.description && (
+                                    <p className="text-sm text-gray-700 mb-2 mt-2">{event.description}</p>
+                                  )}
                                   {event.time && (
                                     <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
-                                      <Clock className="h-4 w-4" />
-                                      {event.time.includes('AM') || event.time.includes('PM') 
-                                        ? event.time 
-                                        : (() => {
-                                            const [hours, minutes] = event.time.split(':')
-                                            const hour = parseInt(hours, 10)
-                                            const ampm = hour >= 12 ? 'PM' : 'AM'
-                                            const hour12 = hour % 12 || 12
-                                            return `${hour12}:${minutes} ${ampm}`
-                                          })()}
+                                      <Clock className="h-4 w-4 text-uf-orange" />
+                                      {formatTime(event.time)}
                                     </div>
                                   )}
                                   {event.location && (
                                     <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
-                                      <MapPin className="h-4 w-4" />
+                                      <MapPin className="h-4 w-4 text-uf-orange" />
                                       {event.location}
+                                    </div>
+                                  )}
+                                  {event.linkUrl && (
+                                    <div className="mt-2 mb-2">
+                                      <a
+                                        href={event.linkUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-sm text-uf-blue hover:text-blue-700 font-medium"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                        {event.linkText || 'Registration Link'}
+                                      </a>
                                     </div>
                                   )}
                                 </div>
@@ -1554,9 +1684,48 @@ function Dashboard() {
           />
         )}
 
+        {/* Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })}
+          onConfirm={() => {
+            if (confirmModal.onConfirm) {
+              confirmModal.onConfirm()
+            } else {
+              setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })
+            }
+          }}
+          title={confirmModal.title}
+          message={confirmModal.message}
+        />
+
       </div>
     </div>
   )
+}
+
+// Helper function to format time from HH:MM or HH:MM:SS to readable format
+function formatTime(timeString) {
+  if (!timeString) return ''
+  // If already formatted (contains AM/PM), return as is
+  if (timeString.includes('AM') || timeString.includes('PM')) {
+    return timeString
+  }
+  // Convert HH:MM or HH:MM:SS to readable format
+  const [hours, minutes] = timeString.split(':')
+  const hour = parseInt(hours, 10)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
+
+// Helper function to format date string (YYYY-MM-DD) to readable format without timezone issues
+function formatDate(dateString) {
+  if (!dateString) return ''
+  // Parse date string directly to avoid timezone issues
+  const [year, month, day] = dateString.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 // Event Card Component
@@ -1607,11 +1776,11 @@ function EventCard({ event, onEdit, onDelete, onDuplicate, isPast = false, isSel
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-uf-orange" />
-              <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span>{formatDate(event.date)}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-uf-orange" />
-              <span>{event.time}</span>
+              <span>{formatTime(event.time)}</span>
             </div>
             {event.location && (
               <div className="flex items-center gap-2">
@@ -2042,11 +2211,11 @@ function OldEventsListSection() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-uf-orange" />
-                        <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span>{formatDate(event.date)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-uf-orange" />
-                        <span>{event.time}</span>
+                        <span>{formatTime(event.time)}</span>
                       </div>
                       {event.location && (
                         <div className="flex items-center gap-2">

@@ -217,15 +217,15 @@ function Events() {
         structuredData={structuredData}
       />
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-12 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-6 md:py-12 overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
+              <div className="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
                 <span className="text-sm font-semibold text-white">Calendar & Events</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">Business events</h1>
-              <p className="text-xl text-blue-100">
+              <h1 className="text-4xl md:text-5xl font-bold mb-1 md:mb-2 text-white">Business events</h1>
+              <p className="hidden md:block text-xl text-blue-100">
                 From UF organizations & programs
               </p>
             </div>
@@ -628,21 +628,21 @@ function Events() {
               <div className="space-y-8">
                 {Object.entries(eventsByMonth).map(([month, monthEvents]) => (
                   <div key={month}>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-                      <CalendarIcon className="h-6 w-6 mr-2 text-uf-orange" />
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-4 flex items-center">
+                      <CalendarIcon className="h-5 w-5 md:h-6 md:w-6 mr-2 text-uf-orange" />
                       {month}
                     </h2>
-                    <div className="space-y-4">
+                    <div className="space-y-2 md:space-y-4">
                       {monthEvents.map(event => (
-                        <div key={event.id} className="card p-6 hover:shadow-xl transition-shadow">
-                          <div className="flex flex-col md:flex-row gap-6">
+                        <div key={event.id} className="card p-3 md:p-6 hover:shadow-xl transition-shadow">
+                          <div className="flex flex-col md:flex-row gap-3 md:gap-6">
                             {/* Date Badge */}
                             <div className="flex-shrink-0 text-center">
-                              <div className="bg-uf-orange text-white rounded-lg p-4 w-24">
-                                <div className="text-3xl font-bold">
+                              <div className="bg-uf-orange text-white rounded-lg p-2 md:p-4 w-16 md:w-24">
+                                <div className="text-xl md:text-3xl font-bold">
                                   {new Date(event.date).getDate()}
                                 </div>
-                                <div className="text-sm uppercase">
+                                <div className="text-xs md:text-sm uppercase">
                                   {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
                                 </div>
                               </div>
@@ -650,20 +650,20 @@ function Events() {
 
                             {/* Event Details */}
                             <div className="flex-grow">
-                              <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                                <h3 className="text-2xl font-bold text-gray-900">{event.title}</h3>
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(event.category)}`}>
+                              <div className="flex flex-wrap items-start justify-between gap-2 mb-1 md:mb-2">
+                                <h3 className="text-lg md:text-2xl font-bold text-gray-900">{event.title}</h3>
+                                <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-semibold ${getCategoryColor(event.category)}`}>
                                   {event.category}
                                 </span>
                               </div>
                               
-                              <div className="text-gray-600 mb-3">
+                              <div className="text-gray-600 mb-1 md:mb-3 text-sm md:text-base">
                                 <span className="font-semibold text-uf-blue">{event.club}</span>
                               </div>
 
-                              <p className="text-gray-700 mb-4">{event.description}</p>
+                              <p className="text-gray-700 mb-2 md:mb-4 text-sm md:text-base line-clamp-2 md:line-clamp-none">{event.description}</p>
 
-                              <div className="grid md:grid-cols-2 gap-3 text-sm text-gray-700">
+                              <div className="grid md:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm text-gray-700">
                                 <div className="flex items-center">
                                   <CalendarIcon className="h-4 w-4 mr-2 text-uf-orange flex-shrink-0" />
                                   <span>{formatDate(event.date)}</span>
@@ -687,12 +687,12 @@ function Events() {
                               </div>
 
                               {isUpcoming(event.date) && event.linkText && event.linkUrl && (
-                                <div className="mt-4">
+                                <div className="mt-2 md:mt-4">
                                   <a 
                                     href={event.linkUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="btn-primary inline-block"
+                                    className="btn-primary inline-block text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
                                   >
                                     {event.linkText}
                                   </a>

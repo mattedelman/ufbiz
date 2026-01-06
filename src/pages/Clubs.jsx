@@ -385,13 +385,13 @@ function Clubs() {
         structuredData={structuredData}
       />
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-12 overflow-hidden">
+      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-6 md:py-12 overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
+          <div className="hidden md:inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
             <span className="text-sm font-semibold text-white">50+ Organizations & Programs</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">Organizations & programs</h1>
-          <p className="text-xl text-blue-100">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 md:mb-4 text-white">Organizations & Programs</h1>
+          <p className="hidden md:block text-xl text-blue-100">
             Find the perfect fit for your interests and goals
           </p>
         </div>
