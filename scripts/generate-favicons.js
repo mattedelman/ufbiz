@@ -1,3 +1,4 @@
+import puppeteer from 'puppeteer';
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
@@ -21,6 +22,7 @@ const sizes = [
 const icoSize = 32;
 
 async function generateFavicons() {
+  let browser;
   try {
     // Check if SVG exists
     if (!fs.existsSync(svgPath)) {
@@ -28,29 +30,77 @@ async function generateFavicons() {
       process.exit(1);
     }
 
+    // Read SVG content
+    const svgContent = fs.readFileSync(svgPath, 'utf-8');
+    
     console.log('Generating favicon files from', svgPath);
     
-    // Generate PNG files
+    // Launch browser for proper emoji rendering
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+    
+    // Set viewport to a large size for high-quality rendering
+    await page.setViewport({ width: 512, height: 512, deviceScaleFactor: 2 });
+    
+    // Create HTML with the SVG
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              width: 512px;
+              height: 512px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            svg {
+              width: 512px;
+              height: 512px;
+            }
+          </style>
+        </head>
+        <body>
+          ${svgContent}
+        </body>
+      </html>
+    `;
+    
+    await page.setContent(html);
+    // Wait a bit for rendering (using Promise-based setTimeout)
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Take screenshot at high resolution
+    const screenshot = await page.screenshot({
+      type: 'png',
+      clip: { x: 0, y: 0, width: 512, height: 512 }
+    });
+    
+    // Generate PNG files at different sizes using sharp
     for (const { name, size } of sizes) {
       const outputPath = path.join(publicDir, name);
-      await sharp(svgPath)
+      await sharp(screenshot)
         .resize(size, size, {
-          fit: 'contain',
-          background: { r: 0, g: 33, b: 165, alpha: 1 } // UF Blue #0021A5
+          fit: 'cover',
+          position: 'center'
         })
         .png()
         .toFile(outputPath);
       console.log(`✓ Generated ${name} (${size}x${size})`);
     }
 
-    // Generate favicon.ico (32x32 PNG converted to ICO format)
-    // Note: sharp doesn't support ICO directly, so we'll create a 32x32 PNG
-    // and name it favicon.ico (browsers will accept PNG as ICO)
+    // Generate favicon.ico (32x32 PNG)
     const icoPath = path.join(publicDir, 'favicon.ico');
-    await sharp(svgPath)
+    await sharp(screenshot)
       .resize(icoSize, icoSize, {
-        fit: 'contain',
-        background: { r: 0, g: 33, b: 165, alpha: 1 }
+        fit: 'cover',
+        position: 'center'
       })
       .png()
       .toFile(icoPath);
@@ -64,6 +114,10 @@ async function generateFavicons() {
   } catch (error) {
     console.error('Error generating favicons:', error);
     process.exit(1);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 }
 
