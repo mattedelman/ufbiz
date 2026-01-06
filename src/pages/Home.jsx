@@ -40,6 +40,44 @@ function RotatingMajor() {
   )
 }
 
+function ClubLogo({ club, index }) {
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+
+  return (
+    <div
+      className="flex-shrink-0 w-28 h-28 rounded-xl hover:scale-110 transition-transform duration-300 cursor-pointer relative bg-gray-100 flex items-center justify-center"
+      title={club.name}
+    >
+      {!imageError ? (
+        <>
+          <img
+            src={club.image}
+            alt={club.name}
+            className={`w-full h-full rounded-xl object-cover border-2 border-gray-200 shadow-md ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200`}
+            onError={() => {
+              setImageError(true)
+            }}
+            onLoad={() => {
+              setImageLoaded(true)
+            }}
+            loading="lazy"
+          />
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-xl" />
+          )}
+        </>
+      ) : (
+        <div className="w-full h-full rounded-xl border-2 border-gray-200 shadow-md bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+          <span className="text-gray-500 text-xs font-semibold text-center px-2 line-clamp-2">
+            {club.name.split(' ').slice(0, 2).join(' ')}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Home() {
   const navigate = useNavigate()
 
@@ -102,13 +140,7 @@ function Home() {
         structuredData={structuredData}
       />
       {/* Hero Section - Redesigned */}
-      <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-64 h-64 border-2 border-white rounded-full"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 border border-white rounded-full"></div>
-        </div>
-        
+      <div className="relative bg-blue-700 overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-8 animate-fade-in">
@@ -153,20 +185,7 @@ function Home() {
                 const clubsWithImages = clubs.filter(club => club.image && club.image.trim() !== '')
                 const duplicatedClubs = [...clubsWithImages, ...clubsWithImages]
                 return duplicatedClubs.map((club, index) => (
-                  <div
-                    key={`${club.id}-${index}`}
-                    className="flex-shrink-0 w-28 h-28 rounded-xl hover:scale-110 transition-transform duration-300 cursor-pointer"
-                    title={club.name}
-                  >
-                    <img
-                      src={club.image}
-                      alt={club.name}
-                      className="w-full h-full rounded-xl object-cover border-2 border-gray-200 shadow-md"
-                      onError={(e) => {
-                        e.target.style.display = 'none'
-                      }}
-                    />
-                  </div>
+                  <ClubLogo key={`${club.id}-${index}`} club={club} index={index} />
                 ))
               })()}
             </div>

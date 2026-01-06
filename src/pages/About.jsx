@@ -81,11 +81,6 @@ function About() {
       />
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-20 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-64 h-64 border-2 border-white rounded-full"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 border border-white rounded-full"></div>
-        </div>
-        
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-6">
             <span className="text-sm font-semibold text-white">Built by students, for students</span>
@@ -129,7 +124,7 @@ function About() {
               <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
                 <div className="flex flex-col items-center text-center">
                   <img 
-                    src="https://media.licdn.com/dms/image/v2/D4E03AQEbgj0OkCWGDQ/profile-displayphoto-shrink_800_800/B4EZXt2yYvGYAc-/0/1743452319123?e=1764201600&v=beta&t=LoW3jHgoKlh275SEskfg_NGTHbjDpQ0_L0kkIkLCJ18"
+                    src="/images/headshot.jpg"
                     alt="Matthew Edelman"
                     className="w-32 h-32 rounded-full object-cover border-4 border-gray-200 shadow-md mb-6"
                   />
@@ -150,27 +145,6 @@ function About() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-
-      {/* CTA Section - Compact */}
-      <div className="bg-gray-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-            Questions or want to contribute?
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Reach out at <a href="mailto:edelmanm@ufl.edu" className="text-uf-blue hover:text-blue-700 font-medium">edelmanm@ufl.edu</a>
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="/clubs" className="inline-flex items-center justify-center px-6 py-3 bg-uf-blue text-white font-semibold rounded-lg hover:bg-blue-700 transition-all">
-              Browse Organizations & Programs
-            </a>
-            <a href="/events" className="inline-flex items-center justify-center px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-uf-orange hover:text-uf-orange transition-all">
-              View Events
-            </a>
           </div>
         </div>
       </div>

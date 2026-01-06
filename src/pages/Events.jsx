@@ -218,11 +218,6 @@ function Events() {
       />
       {/* Header */}
       <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-12 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-64 h-64 border-2 border-white rounded-full"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 border border-white rounded-full"></div>
-        </div>
-        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -285,7 +280,7 @@ function Events() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowOrgFilter(!showOrgFilter)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 showOrgFilter || selectedOrganizations.length > 0
                   ? 'bg-uf-blue text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -307,7 +302,7 @@ function Events() {
                   <button
                     key={org}
                     onClick={() => toggleOrganization(org)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-uf-orange text-white rounded-lg text-xs font-medium hover:bg-orange-600 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-uf-orange text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors shadow-sm min-h-[44px]"
                   >
                     {org}
                     <X className="h-3 w-3" />
@@ -315,7 +310,7 @@ function Events() {
                 ))}
                 <button
                   onClick={clearOrgFilters}
-                  className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 font-medium"
+                  className="px-3 py-2.5 text-sm text-gray-600 hover:text-gray-900 font-medium min-h-[44px]"
                 >
                   Clear all
                 </button>
@@ -359,13 +354,13 @@ function Events() {
               <div className="flex gap-2 mb-3">
                 <button
                   onClick={selectAllFiltered}
-                  className="flex-1 px-3 py-1.5 text-xs font-medium text-uf-blue border border-uf-blue rounded-lg hover:bg-uf-blue hover:text-white transition-colors"
+                  className="flex-1 px-3 py-2.5 text-sm font-medium text-uf-blue border border-uf-blue rounded-lg hover:bg-uf-blue hover:text-white transition-colors min-h-[44px]"
                 >
                   Select All {orgSearchTerm && `(${filteredOrganizations.length})`}
                 </button>
                 <button
                   onClick={deselectAllFiltered}
-                  className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex-1 px-3 py-2.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors min-h-[44px]"
                 >
                   Deselect All
                 </button>
@@ -410,7 +405,7 @@ function Events() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[44px] ${
                     selectedCategory === category
                       ? 'bg-uf-orange text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -594,22 +589,27 @@ function Events() {
           <div>
             {/* Category Filter for List View */}
             <div className="mb-6 bg-white rounded-lg shadow-sm p-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Filter className="text-gray-600 h-5 w-5" />
+              <div className="flex items-center gap-2 mb-3">
+                <Filter className="text-gray-600 h-5 w-5 flex-shrink-0" />
                 <span className="text-gray-700 font-medium">Category:</span>
-                {eventCategories.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-uf-orange text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
+              </div>
+              {/* Horizontally scrollable category buttons on mobile */}
+              <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+                <div className="flex items-center gap-2 md:flex-wrap min-w-max md:min-w-0">
+                  {eventCategories.map(category => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 min-h-[44px] ${
+                        selectedCategory === category
+                          ? 'bg-uf-orange text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             

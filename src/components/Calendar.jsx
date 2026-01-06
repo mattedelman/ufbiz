@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-function Calendar({ events, onDayClick, selectedDate }) {
+function Calendar({ events, onDayClick, selectedDate, showEventIndicators = true }) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [showQuickJump, setShowQuickJump] = useState(false)
 
@@ -192,12 +192,24 @@ function Calendar({ events, onDayClick, selectedDate }) {
                   {day}
                 </div>
                 
-                {/* Event indicators - red dots (one per event, max 3) */}
-                {dayEvents.length > 0 && (
-                  <div className="flex gap-0.5 items-center">
-                    {dayEvents.slice(0, 3).map((_, idx) => (
-                      <div key={idx} className="w-1 h-1 bg-red-500 rounded-full"></div>
-                    ))}
+                {/* Event indicators - different colors for draft vs published */}
+                {showEventIndicators && dayEvents.length > 0 && (
+                  <div className="flex gap-0.5 items-center flex-wrap">
+                    {dayEvents.slice(0, 3).map((event, idx) => {
+                      const isDraft = event.status === 'draft' || !event.status
+                      return (
+                        <div 
+                          key={event.id || idx} 
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isDraft ? 'bg-yellow-500' : 'bg-green-500'
+                          }`}
+                          title={isDraft ? 'Draft' : 'Published'}
+                        ></div>
+                      )
+                    })}
+                    {dayEvents.length > 3 && (
+                      <div className="text-xs text-gray-500 ml-0.5">+{dayEvents.length - 3}</div>
+                    )}
                   </div>
                 )}
               </div>

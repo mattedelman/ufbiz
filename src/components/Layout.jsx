@@ -39,7 +39,6 @@ function Layout({ children }) {
 
   // Build navigation based on auth status
   const baseNavigation = [
-    { name: 'Home', path: '/' },
     { name: 'Organizations & Programs', path: '/clubs' },
     { name: 'Events', path: '/events' },
     { name: 'About', path: '/about' },
@@ -168,10 +167,6 @@ function Layout({ children }) {
 
       {/* Footer - Redesigned */}
       <footer className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-16 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-5">
-          <div className="absolute top-10 right-20 w-64 h-64 border border-white rounded-full"></div>
-          <div className="absolute bottom-10 left-20 w-96 h-96 border border-white rounded-full"></div>
-        </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
@@ -212,9 +207,11 @@ function Layout({ children }) {
               </a>
             </div>
           </div>
-          <div className="border-t border-gray-700 pt-8 text-center">
-            <p className="text-gray-400 mb-2">&copy; 2025 UFbiz. Built with ❤️ for the UF business community.</p>
-            <p className="text-gray-500 text-sm">UFbiz is not officially affiliated with the University of Florida</p>
+          <div className="border-t border-gray-700 pt-8 text-center px-4">
+            <p className="text-gray-400 mb-2">&copy; 2026 UFbiz</p>
+            <p className="text-gray-500 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
+              This site is not affiliated with the University of Florida.
+            </p>
           </div>
         </div>
       </footer>

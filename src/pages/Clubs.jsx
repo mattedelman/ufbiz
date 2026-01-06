@@ -386,11 +386,6 @@ function Clubs() {
       />
       {/* Header */}
       <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 py-12 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-64 h-64 border-2 border-white rounded-full"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 border border-white rounded-full"></div>
-        </div>
-        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 mb-4">
             <span className="text-sm font-semibold text-white">50+ Organizations & Programs</span>
@@ -418,34 +413,41 @@ function Clubs() {
         </div>
 
         {/* Compact Filter & Sort Row */}
-        <div className="mb-6 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Filter className="text-gray-600 h-4 w-4" />
-            <span className="text-sm text-gray-700 font-medium">Category:</span>
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Filter className="text-gray-600 h-4 w-4" />
+              <span className="text-sm text-gray-700 font-medium">Category:</span>
+            </div>
+            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+              <ArrowDownAZ className="h-4 w-4 text-gray-600" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border border-gray-300 rounded-lg py-2.5 pl-3 pr-8 text-sm focus:ring-2 focus:ring-uf-orange focus:border-transparent bg-white min-h-[44px]"
+              >
+                <option value="name">A-Z</option>
+                <option value="category">Category</option>
+              </select>
+            </div>
           </div>
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedCategory === category
-                  ? 'bg-uf-orange text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-2">
-            <ArrowDownAZ className="h-4 w-4 text-gray-600" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gray-300 rounded-lg py-1.5 pl-2 pr-6 text-xs focus:ring-2 focus:ring-uf-orange focus:border-transparent bg-white"
-            >
-              <option value="name">A-Z</option>
-              <option value="category">Category</option>
-            </select>
+          {/* Horizontally scrollable category buttons on mobile */}
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+            <div className="flex items-center gap-2 md:flex-wrap min-w-max md:min-w-0">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[44px] whitespace-nowrap flex-shrink-0 ${
+                    selectedCategory === category
+                      ? 'bg-uf-orange text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

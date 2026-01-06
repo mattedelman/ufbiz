@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Plus, Calendar, MapPin, Clock, ExternalLink, Edit2, Trash2, LogOut, Building2, BarChart3, Copy, List, CalendarDays, X, CheckSquare, Square, Loader2, Mail, Send } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, Calendar, MapPin, Clock, ExternalLink, Edit2, Trash2, LogOut, Building2, BarChart3, Copy, List, CalendarDays, X, CheckSquare, Square, Loader2, Mail, Send, ChevronDown } from 'lucide-react'
+import CalendarComponent from '../components/Calendar'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentUser, signOut } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -7,6 +8,285 @@ import { getAllUsers, getUnlinkedUsers, linkUserToOrganization, getAllOrganizati
 import { clubs } from '../data/clubs'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+
+// Custom Time Picker with Simple Up/Down Stepper
+function CustomTimePicker({ value, onChange, required }) {
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [displayValue, setDisplayValue] = useState('')
+  const dropdownRef = useRef(null)
+  
+  // Parse time value (HH:MM format to 12-hour)
+  const parseTime = (timeStr) => {
+    if (!timeStr) return { hour: 12, minute: 0, period: 'PM' }
+    const [hours, minutes] = timeStr.split(':')
+    const hour24 = parseInt(hours, 10)
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24
+    const period = hour24 >= 12 ? 'PM' : 'AM'
+    return { hour: hour12, minute: parseInt(minutes, 10), period }
+  }
+  
+  const [selectedTime, setSelectedTime] = useState(parseTime(value))
+  
+  // Update display value when value changes
+  useEffect(() => {
+    if (value) {
+      const { hour, minute, period } = parseTime(value)
+      setDisplayValue(`${hour}:${minute.toString().padStart(2, '0')} ${period}`)
+      setSelectedTime({ hour, minute, period })
+    } else {
+      setDisplayValue('')
+    }
+  }, [value])
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+  
+  // Convert to 24-hour format
+  const convertTo24Hour = (hour, minute, period) => {
+    let hour24 = hour
+    if (period === 'PM' && hour24 !== 12) hour24 += 12
+    if (period === 'AM' && hour24 === 12) hour24 = 0
+    return `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+  }
+  
+  const updateTime = (newTime) => {
+    setSelectedTime(newTime)
+    const time24 = convertTo24Hour(newTime.hour, newTime.minute, newTime.period)
+    onChange(time24)
+    setDisplayValue(`${newTime.hour}:${newTime.minute.toString().padStart(2, '0')} ${newTime.period}`)
+  }
+  
+  const incrementHour = () => {
+    const newHour = selectedTime.hour === 12 ? 1 : selectedTime.hour + 1
+    updateTime({ ...selectedTime, hour: newHour })
+  }
+  
+  const decrementHour = () => {
+    const newHour = selectedTime.hour === 1 ? 12 : selectedTime.hour - 1
+    updateTime({ ...selectedTime, hour: newHour })
+  }
+  
+  const incrementMinute = () => {
+    const newMinute = selectedTime.minute >= 55 ? 0 : selectedTime.minute + 5
+    updateTime({ ...selectedTime, minute: newMinute })
+  }
+  
+  const decrementMinute = () => {
+    const newMinute = selectedTime.minute === 0 ? 55 : selectedTime.minute - 5
+    updateTime({ ...selectedTime, minute: newMinute })
+  }
+  
+  const togglePeriod = () => {
+    const newPeriod = selectedTime.period === 'AM' ? 'PM' : 'AM'
+    updateTime({ ...selectedTime, period: newPeriod })
+  }
+  
+  // Typing functionality disabled - use dropdown only
+  // const handleInputChange = (e) => { ... } // Commented out - typing disabled
+  
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none z-10" />
+      <input
+        type="text"
+        value={displayValue}
+        // onChange={handleInputChange} // Typing disabled - use dropdown only
+        onFocus={() => setShowDropdown(true)}
+        onClick={() => setShowDropdown(true)}
+        placeholder="Select time"
+        readOnly
+        className="w-full pl-11 pr-10 py-3.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-semibold shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
+        required={required}
+      />
+      <button
+        type="button"
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <ChevronDown className="h-5 w-5" />
+      </button>
+      
+      {showDropdown && (
+        <div className="absolute z-50 mt-2 bg-white rounded-lg shadow-xl border-2 border-gray-200 p-3" style={{ width: '240px' }}>
+          <div className="flex items-center justify-center gap-2">
+            {/* Hour Scroll */}
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-gray-500 mb-1 font-medium">Hour</span>
+              <div className="h-32 overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-2 border-gray-200 rounded-lg bg-gray-50">
+                {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(h => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => updateTime({ ...selectedTime, hour: h })}
+                    className={`w-16 py-2 text-center font-semibold transition-colors ${
+                      selectedTime.hour === h
+                        ? 'bg-uf-orange text-white'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-uf-orange'
+                    }`}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="text-2xl font-semibold text-gray-300 self-center pt-5">:</div>
+            
+            {/* Minute Scroll */}
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-gray-500 mb-1 font-medium">Minute</span>
+              <div className="h-32 overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent border-2 border-gray-200 rounded-lg bg-gray-50">
+                {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => updateTime({ ...selectedTime, minute: m })}
+                    className={`w-16 py-2 text-center font-semibold transition-colors ${
+                      selectedTime.minute === m
+                        ? 'bg-uf-orange text-white'
+                        : 'text-gray-700 hover:bg-orange-50 hover:text-uf-orange'
+                    }`}
+                  >
+                    {m.toString().padStart(2, '0')}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* AM/PM Scroll */}
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-gray-500 mb-1 font-medium">&nbsp;</span>
+              <div className="h-32 flex flex-col gap-1 justify-center">
+                <button
+                  type="button"
+                  onClick={() => updateTime({ ...selectedTime, period: 'AM' })}
+                  className={`w-14 py-3 text-center font-semibold rounded transition-colors ${
+                    selectedTime.period === 'AM'
+                      ? 'bg-uf-orange text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-uf-orange'
+                  }`}
+                >
+                  AM
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateTime({ ...selectedTime, period: 'PM' })}
+                  className={`w-14 py-3 text-center font-semibold rounded transition-colors ${
+                    selectedTime.period === 'PM'
+                      ? 'bg-uf-orange text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-uf-orange'
+                  }`}
+                >
+                  PM
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            onClick={() => setShowDropdown(false)}
+            className="w-full mt-3 py-2 bg-uf-orange text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold text-sm shadow-sm"
+          >
+            Done
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Custom Date Input with Auto-Formatting AND Calendar Picker
+function AutoFormatDateInput({ value, onChange, required }) {
+  const [displayValue, setDisplayValue] = useState('')
+  const [showCalendar, setShowCalendar] = useState(false)
+  
+  useEffect(() => {
+    if (value) {
+      // Convert YYYY-MM-DD to M-D-YYYY for display
+      const [year, month, day] = value.split('-')
+      setDisplayValue(`${parseInt(month)}-${parseInt(day)}-${year}`)
+    }
+  }, [value])
+  
+  const handleInputChange = (e) => {
+    let input = e.target.value.replace(/\D/g, '') // Remove non-digits
+    
+    // Auto-format as user types: M-D-YYYY
+    if (input.length >= 2) {
+      input = input.slice(0, 2) + '-' + input.slice(2)
+    }
+    if (input.length >= 5) {
+      input = input.slice(0, 5) + '-' + input.slice(5, 9)
+    }
+    
+    setDisplayValue(input)
+    
+    // Parse complete date and convert to YYYY-MM-DD for storage
+    if (input.length === 10) {
+      const parts = input.split('-')
+      if (parts.length === 3) {
+        const month = parts[0].padStart(2, '0')
+        const day = parts[1].padStart(2, '0')
+        const year = parts[2]
+        
+        // Validate date
+        const date = new Date(`${year}-${month}-${day}`)
+        if (!isNaN(date.getTime()) && date >= new Date().setHours(0,0,0,0)) {
+          onChange(`${year}-${month}-${day}`)
+        }
+      }
+    }
+  }
+  
+  const handleDatePickerChange = (date) => {
+    if (date) {
+      // Use local date to avoid timezone issues
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
+      onChange(dateStr)
+      setShowCalendar(false)
+    }
+  }
+  
+  return (
+    <div className="relative">
+      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none z-10" />
+      <input
+        type="text"
+        value={displayValue}
+        onChange={handleInputChange}
+        onFocus={() => setShowCalendar(true)}
+        placeholder="1-15-2025"
+        maxLength={10}
+        className="w-full pl-11 pr-4 py-3.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-semibold shadow-sm hover:border-uf-orange/50 transition-all bg-white"
+        required={required}
+      />
+      {showCalendar && (
+        <div className="absolute z-50 mt-2">
+          <DatePicker
+            selected={value ? new Date(value) : null}
+            onChange={handleDatePickerChange}
+            onClickOutside={() => setShowCalendar(false)}
+            minDate={new Date()}
+            inline
+            calendarClassName="modern-datepicker"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
 import { 
   getMyOrganizationEvents, 
   createEvent, 
@@ -31,6 +311,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [loggedInOrganization, setLoggedInOrganization] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedDayEvents, setSelectedDayEvents] = useState([])
   
   // Check authentication and load data on mount
   useEffect(() => {
@@ -53,7 +335,14 @@ function Dashboard() {
         setUser(currentUser)
         
         if (profile?.organizations) {
-          setLoggedInOrganization(profile.organizations)
+          // Merge organization data with clubs.js to get image from file
+          const orgFromClubs = clubs.find(c => c.name === profile.organizations.name)
+          const mergedOrganization = {
+            ...profile.organizations,
+            // Always use image from clubs.js file, not database
+            image: orgFromClubs?.image || profile.organizations.image
+          }
+          setLoggedInOrganization(mergedOrganization)
           
           // Load events for this organization
           try {
@@ -173,9 +462,15 @@ function Dashboard() {
 
       if (endDate && currentDate > endDate) break
 
+      // Use local date to avoid timezone issues
+      const year = currentDate.getFullYear()
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0')
+      const day = String(currentDate.getDate()).padStart(2, '0')
+      const dateStr = `${year}-${month}-${day}`
+      
       const recurringEvent = {
         ...baseEventData,
-        date: currentDate.toISOString().split('T')[0],
+        date: dateStr,
         title: `${baseEventData.title}${count > 0 ? ` (Recurring ${count + 1})` : ''}`,
         status: baseEventData.status // Keep same status for all recurring events
       }
@@ -283,6 +578,7 @@ function Dashboard() {
     setEditingEvent(event)
     setShowAddForm(true)
     setSelectedEvents([]) // Clear selection when editing
+    setActiveTab('events') // Switch to Manage Events tab when editing
   }
 
   const handleDelete = async (eventId) => {
@@ -487,20 +783,20 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header - Mobile Optimized */}
+      <div className="bg-gradient-to-r from-uf-blue to-blue-700 text-white py-4 md:py-6 sticky top-0 z-40 shadow-md">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Dashboard</h1>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* Organization Profile - Clickable */}
               <button
                 onClick={() => setShowOrgModal(true)}
-                className="flex items-center gap-3 bg-white/10 hover:bg-white/20 rounded-lg px-4 py-2 transition-colors"
+                className="flex items-center gap-2 sm:gap-3 bg-white/10 hover:bg-white/20 rounded-lg px-2 sm:px-4 py-2 transition-colors"
               >
-                <div className="relative flex items-center justify-center w-10 h-10 bg-white/20 rounded-full overflow-hidden">
+                <div className="relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full overflow-hidden flex-shrink-0">
                   {loggedInOrganization.image ? (
                     <img 
                       src={loggedInOrganization.image} 
@@ -512,20 +808,20 @@ function Dashboard() {
                     />
                   ) : null}
                   {(!loggedInOrganization.image || loggedInOrganization.image === null) && (
-                    <Building2 className="h-5 w-5" />
+                    <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
                   )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-xs text-blue-200">Organization</p>
-                  <p className="text-sm font-semibold">{loggedInOrganization.name}</p>
+                  <p className="text-sm font-semibold truncate max-w-[150px] md:max-w-none">{loggedInOrganization.name}</p>
                 </div>
               </button>
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign Out</span>
+                <span className="hidden sm:inline text-sm">Sign Out</span>
               </button>
             </div>
           </div>
@@ -573,22 +869,22 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-6 flex gap-2 border-b border-gray-200">
+        {/* Tab Navigation - Mobile Optimized */}
+        <div className="mb-6 flex gap-1 sm:gap-2 border-b border-gray-200 overflow-x-auto">
           <button
             onClick={() => {
               setActiveTab('events')
               setSelectedEvents([]) // Clear selection when switching tabs
             }}
-            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-3 font-medium transition-colors border-b-2 whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'events'
                 ? 'border-uf-orange text-uf-orange'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <List className="h-4 w-4" />
-              Manage Events
+              <span className="hidden xs:inline">Manage </span>Events
             </div>
           </button>
           <button
@@ -596,13 +892,13 @@ function Dashboard() {
               setActiveTab('calendar')
               setSelectedEvents([]) // Clear selection when switching tabs
             }}
-            className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-3 font-medium transition-colors border-b-2 whitespace-nowrap text-sm sm:text-base ${
               activeTab === 'calendar'
                 ? 'border-uf-orange text-uf-orange'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <CalendarDays className="h-4 w-4" />
               Calendar
             </div>
@@ -634,7 +930,10 @@ function Dashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Your Events</h2>
               <button
-                onClick={() => setShowAddForm(true)}
+                onClick={() => {
+                  setShowAddForm(true)
+                  setActiveTab('events') // Ensure we're on events tab
+                }}
                 className="btn-primary flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
@@ -704,20 +1003,20 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Add/Edit Event Form */}
-        {showAddForm && (
-          <div className="card p-6 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
+        {/* Add/Edit Event Form - Mobile Optimized - Only show in Events tab */}
+        {showAddForm && activeTab === 'events' && (
+          <div className="card p-4 sm:p-6 mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
               {editingEvent ? 'Edit Event' : 'Add New Event'}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-900">
+                <p className="text-xs sm:text-sm text-blue-900">
                   <span className="font-semibold">Organization:</span> {loggedInOrganization.name}
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Event Title *
@@ -755,55 +1054,30 @@ function Dashboard() {
                   </select>
                 </div>
 
-                <div className="relative">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Calendar className="inline h-4 w-4 mr-1 text-uf-orange" />
                     Date *
                   </label>
-                  <div className="relative">
-                    <DatePicker
-                      selected={formData.date ? new Date(formData.date) : null}
-                      onChange={(date) => {
-                        if (date) {
-                          const dateStr = date.toISOString().split('T')[0]
-                          setFormData({...formData, date: dateStr})
-                        }
-                      }}
-                      dateFormat="MMMM d, yyyy"
-                      minDate={new Date()}
-                      placeholderText="Select date"
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-medium shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
-                      wrapperClassName="w-full"
-                      required
-                    />
-                  </div>
+                  <AutoFormatDateInput
+                    value={formData.date}
+                    onChange={(date) => setFormData({...formData, date})}
+                    required
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500">Type like "1-15-2025" (auto-formats) or click to open calendar</p>
                 </div>
 
-                <div className="relative">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Clock className="inline h-4 w-4 mr-1 text-uf-orange" />
                     Time *
                   </label>
-                  <div className="relative">
-                    <DatePicker
-                      selected={formData.time ? new Date(`2000-01-01T${formData.time}`) : null}
-                      onChange={(date) => {
-                        if (date) {
-                          const timeStr = date.toTimeString().slice(0, 5)
-                          setFormData({...formData, time: timeStr})
-                        }
-                      }}
-                      showTimeSelect
-                      showTimeSelectOnly
-                      timeIntervals={15}
-                      timeCaption="Time"
-                      dateFormat="h:mm aa"
-                      placeholderText="Select time"
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-uf-orange text-gray-900 font-medium shadow-sm hover:border-uf-orange/50 transition-all bg-white cursor-pointer"
-                      wrapperClassName="w-full"
-                      required
-                    />
-                  </div>
+                  <CustomTimePicker
+                    value={formData.time}
+                    onChange={(time) => setFormData({...formData, time})}
+                    required
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500">Click to open time selector</p>
                 </div>
 
                 <div className="md:col-span-2">
@@ -964,7 +1238,11 @@ function Dashboard() {
                             selected={formData.recurrenceEndDate ? new Date(formData.recurrenceEndDate) : null}
                             onChange={(date) => {
                               if (date) {
-                                const dateStr = date.toISOString().split('T')[0]
+                                // Use local date to avoid timezone issues
+                                const year = date.getFullYear()
+                                const month = String(date.getMonth() + 1).padStart(2, '0')
+                                const day = String(date.getDate()).padStart(2, '0')
+                                const dateStr = `${year}-${month}-${day}`
                                 setFormData({...formData, recurrenceEndDate: dateStr})
                               } else {
                                 setFormData({...formData, recurrenceEndDate: ''})
@@ -1058,7 +1336,10 @@ function Dashboard() {
               Start by adding your first event to share with the UF business community
             </p>
             <button
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                setShowAddForm(true)
+                setActiveTab('events') // Ensure we're on events tab
+              }}
               className="btn-primary inline-flex items-center gap-2"
             >
               <Plus className="h-5 w-5" />
@@ -1118,8 +1399,134 @@ function Dashboard() {
               </div>
             )}
           </div>
-        ) : activeTab === 'calendar' && !showAddForm ? (
-          <CalendarView events={events} eventsByMonth={eventsByMonth} onEdit={handleEdit} onDelete={handleDelete} onDuplicate={handleDuplicate} />
+        ) : activeTab === 'calendar' ? (
+          <div className="space-y-4">
+            {/* Legend */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4 text-sm">
+              <span className="font-semibold text-gray-700">Legend:</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-gray-600">Published</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                <span className="text-gray-600">Draft</span>
+              </div>
+            </div>
+            
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 min-h-0">
+                <div className="h-full">
+                  <CalendarComponent 
+                    events={events} 
+                    onDayClick={(dateString, dayEvents) => {
+                      setSelectedDate(dateString)
+                      setSelectedDayEvents(dayEvents)
+                    }}
+                    selectedDate={selectedDate}
+                    showEventIndicators={true}
+                  />
+                </div>
+              </div>
+              
+              {/* Side Panel for Selected Day Events */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-xl shadow-lg sticky top-6 max-h-[calc(100vh-10rem)] overflow-y-auto">
+                  {selectedDayEvents.length > 0 ? (
+                    <div>
+                      <div className="bg-uf-blue text-white p-4 sticky top-0 rounded-t-xl">
+                        <p className="text-xs uppercase tracking-wide text-blue-200">
+                          {selectedDate && new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short' })}
+                        </p>
+                        <h3 className="text-2xl font-bold">
+                          {selectedDate && new Date(selectedDate).getDate()}
+                        </h3>
+                        <p className="text-sm text-blue-100">
+                          {selectedDate && `Events on ${new Date(selectedDate).toLocaleDateString('en-US', { 
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}`}
+                        </p>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        {selectedDayEvents.map((event) => {
+                          const isDraft = event.status === 'draft' || !event.status
+                          return (
+                            <div 
+                              key={event.id} 
+                              className={`p-4 rounded-lg border-2 ${
+                                isDraft 
+                                  ? 'bg-yellow-50 border-yellow-300' 
+                                  : 'bg-white border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-bold text-gray-900">{event.title}</h4>
+                                    {isDraft && (
+                                      <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs font-semibold rounded">
+                                        Draft
+                                      </span>
+                                    )}
+                                    {!isDraft && (
+                                      <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-semibold rounded">
+                                        Published
+                                      </span>
+                                    )}
+                                  </div>
+                                  {event.time && (
+                                    <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+                                      <Clock className="h-4 w-4" />
+                                      {event.time.includes('AM') || event.time.includes('PM') 
+                                        ? event.time 
+                                        : (() => {
+                                            const [hours, minutes] = event.time.split(':')
+                                            const hour = parseInt(hours, 10)
+                                            const ampm = hour >= 12 ? 'PM' : 'AM'
+                                            const hour12 = hour % 12 || 12
+                                            return `${hour12}:${minutes} ${ampm}`
+                                          })()}
+                                    </div>
+                                  )}
+                                  {event.location && (
+                                    <div className="flex items-center gap-1 text-sm text-gray-600 mb-1">
+                                      <MapPin className="h-4 w-4" />
+                                      {event.location}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                <button
+                                  onClick={() => handleEdit(event)}
+                                  className="flex-1 px-3 py-1.5 bg-uf-blue text-white rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(event.id)}
+                                  className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm font-medium"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      <CalendarDays className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p className="text-sm">Click on a date to view events</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         ) : /* activeTab === 'users' ? (
           <UserLinkingView 
             loggedInOrgId={loggedInOrganization?.id}
@@ -1136,8 +1543,13 @@ function Dashboard() {
             organization={loggedInOrganization} 
             onClose={() => setShowOrgModal(false)}
             onUpdate={(updatedOrg) => {
-              // Update the logged in organization state
-              setLoggedInOrganization(updatedOrg)
+              // Merge with clubs.js to ensure image comes from file
+              const orgFromClubs = clubs.find(c => c.name === updatedOrg.name)
+              const mergedOrg = {
+                ...updatedOrg,
+                image: orgFromClubs?.image || updatedOrg.image
+              }
+              setLoggedInOrganization(mergedOrg)
             }}
           />
         )}
@@ -1268,281 +1680,7 @@ function EventCard({ event, onEdit, onDelete, onDuplicate, isPast = false, isSel
   )
 }
 
-// Calendar View Component
-function CalendarView({ events, eventsByMonth, onEdit, onDelete, onDuplicate }) {
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [selectedDayEvents, setSelectedDayEvents] = useState([])
-
-  const year = currentDate.getFullYear()
-  const month = currentDate.getMonth()
-
-  // Get first day of month and number of days
-  const firstDayOfMonth = new Date(year, month, 1)
-  const lastDayOfMonth = new Date(year, month + 1, 0)
-  const daysInMonth = lastDayOfMonth.getDate()
-  const startingDayOfWeek = firstDayOfMonth.getDay()
-
-  // Get previous month's last days
-  const prevMonthLastDay = new Date(year, month, 0).getDate()
-  const prevMonthDays = Array.from(
-    { length: startingDayOfWeek },
-    (_, i) => prevMonthLastDay - startingDayOfWeek + i + 1
-  )
-
-  // Get current month days
-  const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-
-  // Get next month days to fill grid
-  const totalCells = prevMonthDays.length + currentMonthDays.length
-  const nextMonthDays = Array.from(
-    { length: 42 - totalCells },
-    (_, i) => i + 1
-  )
-
-  const changeMonth = (offset) => {
-    setCurrentDate(new Date(year, month + offset, 1))
-    setSelectedDate(null)
-    setSelectedDayEvents([])
-  }
-
-  const getEventsForDay = (day, isCurrentMonth, isPrevMonth) => {
-    let checkDate
-    if (isPrevMonth) {
-      checkDate = new Date(year, month - 1, day)
-    } else if (!isCurrentMonth) {
-      checkDate = new Date(year, month + 1, day)
-    } else {
-      checkDate = new Date(year, month, day)
-    }
-    
-    const dateString = checkDate.toISOString().split('T')[0]
-    return events.filter(event => event.date === dateString)
-  }
-
-  const handleDayClick = (day, isCurrentMonth, isPrevMonth) => {
-    let clickedDate
-    if (isPrevMonth) {
-      clickedDate = new Date(year, month - 1, day)
-    } else if (!isCurrentMonth) {
-      clickedDate = new Date(year, month + 1, day)
-    } else {
-      clickedDate = new Date(year, month, day)
-    }
-    
-    const dayEvents = getEventsForDay(day, isCurrentMonth, isPrevMonth)
-    setSelectedDate(clickedDate)
-    setSelectedDayEvents(dayEvents)
-  }
-
-  const isToday = (day) => {
-    const today = new Date()
-    return day === today.getDate() && month === today.getMonth() && year === today.getFullYear()
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Calendar Header */}
-      <div className="card p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => changeMonth(-1)}
-              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              ← Previous
-            </button>
-            <button
-              onClick={() => setCurrentDate(new Date())}
-              className="px-3 py-2 bg-uf-blue text-white hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Today
-            </button>
-            <button
-              onClick={() => changeMonth(1)}
-              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Next →
-            </button>
-          </div>
-        </div>
-
-        {/* Days of Week */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <div key={day} className="text-center font-semibold text-gray-600 text-sm py-2">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2">
-          {/* Previous Month Days */}
-          {prevMonthDays.map((day, idx) => {
-            const dayEvents = getEventsForDay(day, false, true)
-            return (
-              <div
-                key={`prev-${idx}`}
-                onClick={() => handleDayClick(day, false, true)}
-                className="min-h-24 p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="text-gray-400 text-sm font-medium">{day}</div>
-                {dayEvents.length > 0 && (
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map(event => (
-                      <div key={event.id} className="text-xs bg-uf-orange/20 text-uf-orange px-1 py-0.5 rounded truncate">
-                        {event.title}
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-gray-500">+{dayEvents.length - 2} more</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {/* Current Month Days */}
-          {currentMonthDays.map((day) => {
-            const dayEvents = getEventsForDay(day, true, false)
-            const isTodayDate = isToday(day)
-            return (
-              <div
-                key={day}
-                onClick={() => handleDayClick(day, true, false)}
-                className={`min-h-24 p-2 rounded-lg border-2 cursor-pointer hover:shadow-md transition-all ${
-                  isTodayDate
-                    ? 'bg-uf-blue/10 border-uf-blue'
-                    : 'bg-white border-gray-200 hover:border-uf-orange'
-                }`}
-              >
-                <div className={`text-sm font-bold ${isTodayDate ? 'text-uf-blue' : 'text-gray-900'}`}>
-                  {day}
-                  {isTodayDate && <span className="ml-1 text-xs">(Today)</span>}
-                </div>
-                {dayEvents.length > 0 && (
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map(event => (
-                      <div key={event.id} className="text-xs bg-uf-orange text-white px-1 py-0.5 rounded truncate font-medium">
-                        {event.time} - {event.title}
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-uf-orange font-semibold">+{dayEvents.length - 2} more</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {/* Next Month Days */}
-          {nextMonthDays.map((day, idx) => {
-            const dayEvents = getEventsForDay(day, false, false)
-            return (
-              <div
-                key={`next-${idx}`}
-                onClick={() => handleDayClick(day, false, false)}
-                className="min-h-24 p-2 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                <div className="text-gray-400 text-sm font-medium">{day}</div>
-                {dayEvents.length > 0 && (
-                  <div className="mt-1 space-y-1">
-                    {dayEvents.slice(0, 2).map(event => (
-                      <div key={event.id} className="text-xs bg-uf-orange/20 text-uf-orange px-1 py-0.5 rounded truncate">
-                        {event.title}
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-gray-500">+{dayEvents.length - 2} more</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Selected Day Events */}
-      {selectedDate && selectedDayEvents.length > 0 && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900">
-              Events on {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </h3>
-            <button
-              onClick={() => {
-                setSelectedDate(null)
-                setSelectedDayEvents([])
-              }}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="space-y-4">
-            {selectedDayEvents.map((event) => (
-              <div key={event.id} className="border-l-4 border-uf-orange pl-4 py-2 bg-gray-50 rounded-r-lg">
-                <div className="flex items-start justify-between">
-                  <div className="flex-grow">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-bold text-gray-900">{event.title}</h4>
-                      <span className="px-2 py-0.5 bg-uf-orange/10 text-uf-orange text-xs font-medium rounded">
-                        {event.category}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 text-sm mb-2">{event.description}</p>
-                    <div className="flex gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{event.time}</span>
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-1 ml-4">
-                    <button
-                      onClick={() => onDuplicate(event)}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      title="Duplicate"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onEdit(event)}
-                      className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(event.id)}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+// CalendarView removed - now using Calendar component from Events page
 
 // Organization Modal Component
 function OrganizationModal({ organization, onClose, onUpdate }) {
@@ -1552,13 +1690,14 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
   const [saveSuccess, setSaveSuccess] = useState(false)
   
   // Get initial data from organization or clubs data
+  // Always prioritize clubs.js image over database image
   const orgData = clubs.find(c => c.name === organization?.name)
   const getInitialData = () => ({
     description: organization?.description || orgData?.description || '',
     category: organization?.category || orgData?.category || [],
     website: organization?.website || orgData?.website || '',
     email: organization?.email || orgData?.email || '',
-    image: organization?.image || orgData?.image || ''
+    image: orgData?.image || organization?.image || '' // Prioritize clubs.js image
   })
   
   const [editedData, setEditedData] = useState(getInitialData)
@@ -1571,7 +1710,7 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
       category: organization?.category || currentOrgData?.category || [],
       website: organization?.website || currentOrgData?.website || '',
       email: organization?.email || currentOrgData?.email || '',
-      image: organization?.image || currentOrgData?.image || ''
+      image: currentOrgData?.image || organization?.image || '' // Prioritize clubs.js image
     })
     setSaveError(null) // Clear any previous errors
     setSaveSuccess(false) // Clear success message
@@ -1591,12 +1730,13 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
   }
 
   // Use edited data if available, otherwise fall back to organization data or clubs data
+  // Always prioritize clubs.js image over database image
   const displayData = {
     description: editedData.description || orgData?.description || organization.description || '',
     category: editedData.category.length > 0 ? editedData.category : (orgData?.category || organization.category || []),
     website: editedData.website || orgData?.website || organization.website || '',
     email: editedData.email || orgData?.email || organization.email || '',
-    image: editedData.image || organization.image || orgData?.image || ''
+    image: orgData?.image || editedData.image || organization.image || '' // Prioritize clubs.js image
   }
 
   const handleSave = async () => {
@@ -1610,14 +1750,14 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
 
     try {
       // Prepare data for update - ensure category is an array
+      // Note: image field is not editable, so it's not included in updateData
       const updateData = {
         description: editedData.description || null,
         category: Array.isArray(editedData.category) && editedData.category.length > 0 
           ? editedData.category 
           : null,
         website: editedData.website || null,
-        email: editedData.email || null,
-        image: editedData.image || null
+        email: editedData.email || null
       }
 
       // Call backend to update organization
@@ -1651,7 +1791,7 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
       category: organization?.category || currentOrgData?.category || [],
       website: organization?.website || currentOrgData?.website || '',
       email: organization?.email || currentOrgData?.email || '',
-      image: organization?.image || currentOrgData?.image || ''
+      image: currentOrgData?.image || organization?.image || '' // Prioritize clubs.js image
     })
     setIsEditing(false)
   }
@@ -1742,22 +1882,6 @@ function OrganizationModal({ organization, onClose, onUpdate }) {
             </div>
           </div>
 
-          {/* Photo URL - Editable */}
-          {isEditing ? (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Photo URL
-              </label>
-              <input
-                type="url"
-                value={editedData.image}
-                onChange={(e) => setEditedData({ ...editedData, image: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-uf-orange focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
-              />
-              <p className="text-xs text-gray-500 mt-1">Enter a URL to an image</p>
-            </div>
-          ) : null}
 
           {/* Description */}
           <div>
